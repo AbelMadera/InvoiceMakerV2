@@ -1,0 +1,1165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Invoices">
+<meta name="theme-color" content="#1f2937">
+<meta name="format-detection" content="telephone=no">
+<title>Invoices</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
+<style>
+:root{
+  --ink:#1f2937; --slate:#374151; --panel:#f3f4f6; --rule:#d7dce1;
+  --paper:#fff; --desk:#e9ecef; --amber:#fef3c7; --amber-ink:#8a5a06;
+  --mint:#d1fae5; --tint:#e8f0fe; --steel:#2c5282; --steel-dark:#1e3a5f;
+  --muted:#6b7280; --danger:#9b1c1c;
+  --sans:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Helvetica,Arial,sans-serif;
+  --tap:46px;
+  --bar:calc(58px + env(safe-area-inset-bottom));
+  --tabs:calc(54px + env(safe-area-inset-bottom));
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+html{-webkit-text-size-adjust:100%}
+html,body{margin:0;padding:0}
+body{
+  font-family:var(--sans); color:var(--ink); background:var(--desk);
+  font-size:16px; line-height:1.45; -webkit-font-smoothing:antialiased;
+}
+input,select,textarea,button{font-family:inherit; font-size:16px; color:inherit}
+button{touch-action:manipulation}
+.num{font-variant-numeric:tabular-nums}
+
+/* ============ app bar ============ */
+.appbar{
+  position:fixed; top:0; left:0; right:0; z-index:40;
+  background:var(--ink); color:#fff;
+  padding:env(safe-area-inset-top) 16px 0;
+}
+.appbar .in{display:flex; align-items:center; gap:14px; min-height:54px}
+.who{min-width:0; flex:1}
+.who b{display:block; font-size:16px; font-weight:600; white-space:nowrap;
+  overflow:hidden; text-overflow:ellipsis}
+.who small{display:block; font-size:12px; color:#9fb3c8; white-space:nowrap;
+  overflow:hidden; text-overflow:ellipsis}
+.wide-nav{display:none; gap:4px}
+.wide-nav button{
+  background:transparent; border:0; color:#cbd5e1; padding:8px 12px;
+  border-radius:6px; cursor:pointer; font-size:14px;
+}
+.wide-nav button.on{background:#fff; color:var(--ink); font-weight:600}
+
+/* ============ panes ============ */
+.panes{
+  padding:calc(54px + env(safe-area-inset-top) + 14px) 14px
+          calc(var(--bar) + var(--tabs) + 16px);
+  max-width:1500px; margin:0 auto;
+}
+.pane{display:none}
+body.v-invoice  #paneInvoice{display:block}
+body.v-preview  #panePreview{display:block}
+body.v-projects #paneProjects{display:block}
+body.v-saved    #paneSaved{display:block}
+body.v-settings #paneSettings{display:block}
+
+/* ============ cards / steps ============ */
+.step,.card{background:var(--paper); border:1px solid var(--rule); border-radius:12px; margin-bottom:12px}
+.step > h2,.card > h2{
+  margin:0; font-size:15px; font-weight:600; padding:13px 16px 13px 44px;
+  border-bottom:1px solid var(--rule); background:#fafbfc; border-radius:12px 12px 0 0;
+  position:relative;
+}
+.card > h2{padding-left:16px}
+.step > h2::before{
+  content:attr(data-n); position:absolute; left:14px; top:50%; transform:translateY(-50%);
+  width:21px; height:21px; border-radius:50%; background:var(--steel); color:#fff;
+  font-size:12px; font-weight:700; display:grid; place-items:center;
+}
+.step .body,.card .body{padding:14px 16px; container-type:inline-size}
+.hint{font-size:13px; color:var(--muted); margin:6px 0 0}
+
+.field{display:block; margin-bottom:14px}
+.field > span{display:block; font-size:13px; color:var(--muted); margin-bottom:5px; font-weight:500}
+input[type=text],input[type=date],input[type=email],select,textarea{
+  width:100%; min-height:var(--tap); padding:10px 12px; border:1px solid var(--rule);
+  border-radius:9px; background:#fff; outline:none; -webkit-appearance:none; appearance:none;
+}
+select{background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),
+  linear-gradient(135deg,var(--muted) 50%,transparent 50%);
+  background-position:calc(100% - 18px) 50%,calc(100% - 13px) 50%;
+  background-size:5px 5px,5px 5px; background-repeat:no-repeat; padding-right:38px}
+textarea{resize:vertical; min-height:78px; line-height:1.45}
+input:focus,select:focus,textarea:focus{border-color:var(--steel); box-shadow:0 0 0 3px rgba(44,82,130,.18)}
+.g2{display:grid; grid-template-columns:1fr; gap:0 12px}
+@container (min-width:440px){ .g2{grid-template-columns:1fr 1fr} }
+
+.pctwrap{display:flex; align-items:center; gap:12px}
+.pctwrap input[type=range]{flex:1; height:var(--tap); accent-color:var(--steel); background:transparent}
+.pctwrap .box{width:104px; flex:none; text-align:center; font-size:19px; font-weight:600}
+
+/* ============ change orders ============ */
+.corow{
+  display:grid; gap:8px; padding:11px; border:1px solid var(--rule);
+  border-radius:10px; margin-bottom:9px; background:#fcfcfd;
+  grid-template-columns:1fr; align-items:center;
+}
+.corow .nums{display:grid; grid-template-columns:1fr 1fr; gap:8px}
+.corow label{display:block}
+.corow label span{display:block; font-size:11.5px; color:var(--muted); margin-bottom:3px}
+.corow .kill{justify-self:end}
+.cohead{display:none}
+@container (min-width:640px){
+  .corow{grid-template-columns:minmax(0,1fr) minmax(0,200px) minmax(0,130px) 46px; gap:10px; padding:9px 10px}
+  .corow label span{display:none}
+  .corow .kill{justify-self:center}
+  .cohead{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,200px) minmax(0,130px) 46px;
+    gap:10px; padding:0 10px 6px; font-size:12px; color:var(--muted); font-weight:600}
+  .cohead i{font-style:normal; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+}
+.kill{
+  width:44px; height:44px; border:1px solid var(--rule); background:#fff; color:var(--muted);
+  border-radius:9px; font-size:22px; line-height:1; cursor:pointer;
+}
+.kill:active{background:#fdeaea; border-color:var(--danger); color:var(--danger)}
+.corun{display:flex; justify-content:space-between; align-items:center; gap:12px;
+  margin-top:12px; padding-top:12px; border-top:1px solid var(--rule)}
+.corun b{font-size:19px}
+
+/* ============ buttons ============ */
+.btn{
+  border:1px solid var(--rule); background:#fff; min-height:var(--tap);
+  padding:11px 16px; border-radius:10px; cursor:pointer; font-weight:500;
+}
+.btn:active{background:#f0f2f5}
+.btn.primary{background:var(--steel); border-color:var(--steel); color:#fff; font-weight:600}
+.btn.primary:active{background:var(--steel-dark)}
+.btn.wide{width:100%; display:block; margin-bottom:9px}
+.btn.ghost{background:transparent; border-style:dashed; color:var(--steel)}
+.btn:focus-visible,.kill:focus-visible,.tabbar button:focus-visible,.wide-nav button:focus-visible{
+  outline:3px solid rgba(44,82,130,.5); outline-offset:2px}
+.btnrow{display:flex; gap:9px; flex-wrap:wrap}
+.btnrow .btn{flex:1; min-width:132px}
+
+/* ============ action bar + tab bar ============ */
+.actionbar{
+  position:fixed; left:0; right:0; bottom:var(--tabs); z-index:44;
+  background:rgba(255,255,255,.96); -webkit-backdrop-filter:saturate(180%) blur(12px);
+  backdrop-filter:saturate(180%) blur(12px);
+  border-top:1px solid var(--rule); padding:8px 14px;
+}
+.actionbar .in{max-width:1500px; margin:0 auto; display:flex; align-items:center; gap:10px}
+.due{margin-right:auto; min-width:0}
+.due em{display:block; font-style:normal; font-size:11.5px; color:var(--muted)}
+.due strong{display:block; font-size:23px; letter-spacing:-.01em; line-height:1.15}
+.actionbar .btn{padding:10px 15px}
+@media(max-width:390px){ .due strong{font-size:20px} .actionbar .btn{padding:10px 12px} }
+
+.tabbar{
+  position:fixed; left:0; right:0; bottom:0; z-index:45; display:flex;
+  background:rgba(248,249,250,.97); -webkit-backdrop-filter:saturate(180%) blur(12px);
+  backdrop-filter:saturate(180%) blur(12px);
+  border-top:1px solid var(--rule); padding-bottom:env(safe-area-inset-bottom);
+}
+.tabbar button{
+  flex:1; background:transparent; border:0; padding:6px 2px 7px; cursor:pointer;
+  color:var(--muted); font-size:10.5px; display:flex; flex-direction:column;
+  align-items:center; gap:3px; min-height:54px; justify-content:center;
+}
+.tabbar button svg{width:22px; height:22px; stroke:currentColor; fill:none;
+  stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round}
+.tabbar button.on{color:var(--steel); font-weight:600}
+
+/* ============ invoice preview ============ */
+.sheet{
+  background:#fff; border:1px solid var(--rule); border-radius:12px; overflow:hidden;
+  box-shadow:0 2px 12px rgba(31,41,55,.08); font-size:12.5px; line-height:1.4;
+}
+#panePreview{container-type:inline-size}
+.sheet .title{background:var(--ink); color:#fff; text-align:center; font-size:21px;
+  font-weight:700; padding:12px; letter-spacing:.05em}
+.sheet .bar{background:var(--slate); color:#fff; font-weight:700; font-size:11px;
+  padding:7px 12px; letter-spacing:.07em}
+.sheet .meta{display:grid; grid-template-columns:1fr 1fr; background:var(--panel)}
+.sheet .meta .left{padding:11px 12px; border-right:1px solid var(--rule); white-space:pre-line}
+.sheet .meta .left b{font-size:13.5px}
+.sheet .meta .right{padding:7px 12px}
+.sheet .meta .right div{display:flex; justify-content:space-between; gap:8px; padding:2px 0}
+.sheet .meta .right span{color:#4b5563}
+.sheet .party{display:grid; grid-template-columns:1fr 1fr; background:var(--panel);
+  border-bottom:1px solid var(--rule)}
+.sheet .party > div{padding:11px 12px; white-space:pre-line; min-height:64px}
+.sheet .party > div:first-child{border-right:1px solid var(--rule)}
+.sheet .party .lbl{color:#4b5563}
+.sheet table{width:100%; border-collapse:collapse}
+.sheet th{background:var(--panel); font-size:11px; padding:6px 7px;
+  border:1px solid var(--rule); text-align:center}
+.sheet td{border:1px solid var(--rule); padding:5px 7px; vertical-align:top}
+.sheet td.r{text-align:right; white-space:nowrap}
+.sheet tr.tot td{background:var(--panel); font-weight:700}
+.sheet .sum td{padding:6px 10px}
+.sheet .sum tr.due td{background:var(--amber); font-weight:700; color:var(--amber-ink)}
+.sheet .sum td.inp{background:var(--tint)}
+.sheet .grand{display:flex; justify-content:space-between; align-items:center; gap:10px;
+  background:var(--mint); font-weight:700; font-size:15px; padding:11px 12px;
+  border-top:2px solid var(--ink); border-bottom:2px solid var(--ink); margin-top:14px}
+.sheet .notes{padding:10px 12px; color:#374151; min-height:42px; white-space:pre-line;
+  border-top:1px solid var(--rule); font-size:11.5px}
+.sheet .pad{padding:0 12px 12px}
+@container (max-width:430px){
+  .sheet{font-size:11px}
+  .sheet .meta,.sheet .party{grid-template-columns:1fr}
+  .sheet .meta .left,.sheet .party > div:first-child{border-right:0; border-bottom:1px solid var(--rule)}
+  .sheet th,.sheet td{padding:4px 5px}
+}
+
+/* ============ lists ============ */
+.rowitem{display:flex; gap:12px; align-items:center; padding:13px 0;
+  border-top:1px solid var(--rule); flex-wrap:wrap}
+.rowitem:first-of-type{border-top:none}
+.rowitem .main{flex:1; min-width:160px}
+.rowitem .main b{display:block}
+.rowitem .main small{color:var(--muted); font-size:12.5px}
+.rowitem .btn{padding:9px 13px; min-height:40px}
+.empty{color:var(--muted); padding:26px 4px; text-align:center}
+.warn{background:#fffbeb; border:1px solid #fcd34d; color:#78350f; padding:11px 13px;
+  border-radius:10px; font-size:13.5px; margin-bottom:12px}
+.toast{
+  position:fixed; left:50%; transform:translateX(-50%);
+  bottom:calc(var(--bar) + var(--tabs) + 14px); z-index:60; max-width:88vw; text-align:center;
+  background:var(--ink); color:#fff; padding:11px 18px; border-radius:10px; font-size:14px;
+  box-shadow:0 6px 20px rgba(0,0,0,.28); opacity:0; pointer-events:none; transition:opacity .18s;
+}
+.toast.show{opacity:1}
+.toast.bad{background:var(--danger)}
+@media(prefers-reduced-motion:reduce){ .toast{transition:none} }
+
+/* ============ wide: iPad landscape & desktop ============ */
+@media(min-width:1180px){
+  :root{--tabs:0px}
+  .wide-nav{display:flex}
+  .tabbar{display:none}
+  .panes{display:grid; grid-template-columns:minmax(430px,1fr) minmax(360px,560px); gap:20px;
+    align-items:start; padding-bottom:calc(var(--bar) + 18px)}
+  body.v-invoice #panePreview,body.v-preview #paneInvoice{display:block}
+  body.v-invoice #panePreview,body.v-preview #panePreview{position:sticky; top:88px}
+  body.v-projects .panes,body.v-settings .panes,body.v-saved .panes{display:block}
+}
+
+/* ============ print ============ */
+@media print{
+  .appbar,.actionbar,.tabbar,.toast,#paneInvoice,#paneProjects,#paneSettings,#paneSaved{
+    display:none !important}
+  body{background:#fff}
+  .panes{padding:0; display:block; max-width:none}
+  #panePreview{display:block !important; position:static !important}
+  .sheet{border:0; box-shadow:none; border-radius:0; font-size:11px}
+  @page{margin:.45in}
+}
+</style>
+</head>
+<body class="v-invoice">
+
+<header class="appbar">
+  <div class="in">
+    <div class="who">
+      <b id="hTitle">New invoice</b>
+      <small id="hSub">Pick a project to start</small>
+    </div>
+    <nav class="wide-nav">
+      <button data-v="invoice" class="on">Invoice</button>
+      <button data-v="preview">Preview</button>
+      <button data-v="projects">Projects</button>
+      <button data-v="saved">Saved</button>
+      <button data-v="settings">Settings</button>
+    </nav>
+  </div>
+</header>
+
+<main class="panes">
+
+  <section class="pane" id="paneInvoice">
+    <div id="warnings"></div>
+
+    <section class="step">
+      <h2 data-n="1">Project and customer</h2>
+      <div class="body">
+        <label class="field"><span>Project</span><select id="projPick"></select></label>
+        <div class="g2">
+          <label class="field"><span>Project name</span><input type="text" id="pName" placeholder="NWPF"></label>
+          <label class="field"><span>Customer PO / job #</span><input type="text" id="pPo" placeholder="optional"></label>
+        </div>
+        <label class="field"><span>Job site address</span><input type="text" id="pAddr" placeholder="optional"></label>
+        <label class="field"><span>Bill to</span><textarea id="pBill" placeholder="Irwin Steel LLC"></textarea></label>
+        <label class="field"><span>Customer email</span>
+          <input type="email" id="pEmail" inputmode="email" autocapitalize="off" autocorrect="off" placeholder="ap@customer.com"></label>
+        <p class="hint">Changes here save back to the project automatically.</p>
+      </div>
+    </section>
+
+    <section class="step">
+      <h2 data-n="2">This billing period</h2>
+      <div class="body">
+        <div class="g2">
+          <label class="field"><span>Invoice date</span><input type="date" id="iDate"></label>
+          <label class="field"><span>Period ending</span><input type="date" id="iPeriod"></label>
+        </div>
+        <div class="g2">
+          <label class="field"><span>Invoice #</span><input type="text" id="iNo" class="num" inputmode="numeric"></label>
+          <label class="field"><span>Payment request #</span><input type="text" id="iPr" class="num" inputmode="numeric"></label>
+        </div>
+        <div class="field"><span>Percent of project completed</span>
+          <div class="pctwrap">
+            <input type="range" id="pctRange" min="0" max="100" step="0.5" aria-label="Percent complete">
+            <input type="text" id="pct" class="num box" inputmode="decimal">
+          </div>
+        </div>
+        <div class="g2">
+          <label class="field"><span>Original purchase order</span>
+            <input type="text" id="origPO" class="num" inputmode="decimal" placeholder="219,000"></label>
+          <label class="field"><span>Retainage rate (%)</span>
+            <input type="text" id="retRate" class="num" inputmode="decimal" placeholder="0"></label>
+        </div>
+        <label class="field"><span>Less previous payment requests</span>
+          <input type="text" id="prevPay" class="num" inputmode="decimal"></label>
+        <p class="hint" id="prevHint"></p>
+      </div>
+    </section>
+
+    <section class="step">
+      <h2 data-n="3">Change orders</h2>
+      <div class="body">
+        <div class="cohead"><i>Change order / description</i><i>Amount &nbsp; / &nbsp; Billable</i><i>Notes</i><i></i></div>
+        <div id="coBody"></div>
+        <button class="btn ghost wide" id="addCo">+ Add change order</button>
+        <div class="corun"><span>Approved change orders</span><b class="num" id="coSum">$0</b></div>
+        <p class="hint">These stay on the project and carry to every future invoice.</p>
+      </div>
+    </section>
+
+    <section class="step">
+      <h2 data-n="4">Notes and terms</h2>
+      <div class="body">
+        <label class="field"><span>Printed at the bottom of the invoice</span><textarea id="iNotes"></textarea></label>
+        <div class="btnrow">
+          <button class="btn" id="btnSave">Save invoice</button>
+          <button class="btn" id="btnEmail">Email draft</button>
+          <button class="btn" id="btnPrint">Print</button>
+          <button class="btn" id="btnNew">Start blank</button>
+        </div>
+      </div>
+    </section>
+  </section>
+
+  <section class="pane" id="panePreview">
+    <div class="sheet" id="sheet"></div>
+  </section>
+
+  <section class="pane" id="paneProjects"></section>
+  <section class="pane" id="paneSaved"></section>
+  <section class="pane" id="paneSettings"></section>
+</main>
+
+<div class="actionbar">
+  <div class="in">
+    <div class="due"><em>Amount due</em><strong class="num" id="dueBig">$0.00</strong></div>
+    <button class="btn" id="btnFile">Save file</button>
+    <button class="btn primary" id="btnShare">
+      <svg viewBox="0 0 24 24" aria-hidden="true" style="width:17px;height:17px;vertical-align:-3px;margin-right:6px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round"><path d="M12 15V3M12 3 8.5 6.5M12 3l3.5 3.5"/><path d="M5 12v7a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-7"/></svg>Share</button>
+  </div>
+</div>
+
+<nav class="tabbar">
+  <button data-v="invoice" class="on"><svg viewBox="0 0 24 24"><path d="M5 3h9l5 5v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M14 3v5h5M8 13h8M8 17h5"/></svg>Invoice</button>
+  <button data-v="preview"><svg viewBox="0 0 24 24"><path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6-10-6-10-6z"/><circle cx="12" cy="12" r="2.6"/></svg>Preview</button>
+  <button data-v="projects"><svg viewBox="0 0 24 24"><path d="M3 7h6l2 2h10v10a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/></svg>Projects</button>
+  <button data-v="saved"><svg viewBox="0 0 24 24"><path d="M4 3h16v18l-8-4-8 4z"/></svg>Saved</button>
+  <button data-v="settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>Settings</button>
+</nav>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* =========================================================================
+   1. STORAGE
+   ========================================================================= */
+const Store = (() => {
+  const mem = {};
+  const hasArtifact = typeof window !== 'undefined' && window.storage && window.storage.get;
+  let hasLocal = false;
+  try { localStorage.setItem('__t','1'); localStorage.removeItem('__t'); hasLocal = true; } catch(e){}
+  return {
+    mode: hasArtifact ? 'artifact' : (hasLocal ? 'local' : 'memory'),
+    async get(key){
+      try{
+        if(hasArtifact){ const r = await window.storage.get(key); return r ? JSON.parse(r.value) : null; }
+        if(hasLocal){ const v = localStorage.getItem(key); return v ? JSON.parse(v) : null; }
+      }catch(e){ return mem[key] !== undefined ? mem[key] : null; }
+      return mem[key] !== undefined ? mem[key] : null;
+    },
+    async set(key, val){
+      mem[key] = val;
+      try{
+        if(hasArtifact){ await window.storage.set(key, JSON.stringify(val)); return true; }
+        if(hasLocal){ localStorage.setItem(key, JSON.stringify(val)); return true; }
+      }catch(e){ return false; }
+      return false;
+    }
+  };
+})();
+const K_CO='inv:company', K_PROJ='inv:projects', K_HIST='inv:invoices';
+
+/* =========================================================================
+   2. STATE
+   ========================================================================= */
+let company = {
+  name:'A STEEL ERECTOR', street:'2121 Avenue C', cityline:'Grand Prairie, TX 75051',
+  phone:'214-554-8532', email:'', fromName:'', showCents:true,
+  defaultNotes:'Payment terms: Net 30. Make checks payable to A Steel Erector, 2121 Avenue C, Grand Prairie, TX 75051.'
+};
+let projects = [], history = [], cur = null, editingId = null;
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+const $ = id => document.getElementById(id);
+
+/* =========================================================================
+   3. HELPERS
+   ========================================================================= */
+function n(v){
+  if (typeof v === 'number') return isFinite(v) ? v : 0;
+  const x = parseFloat(String(v == null ? '' : v).replace(/[^0-9.\-]/g,''));
+  return isNaN(x) ? 0 : x;
+}
+function money(v, cents){
+  const c = cents === undefined ? company.showCents : cents;
+  const val = n(v);
+  return (val < 0 ? '-$' : '$') + Math.abs(val).toLocaleString('en-US',
+    { minimumFractionDigits: c?2:0, maximumFractionDigits: c?2:0 });
+}
+const money0 = v => money(v, false);
+const isoOf = d => [d.getFullYear(), String(d.getMonth()+1).padStart(2,'0'),
+  String(d.getDate()).padStart(2,'0')].join('-');
+const todayISO = () => isoOf(new Date());
+function endOfMonthISO(){ const d = new Date(); return isoOf(new Date(d.getFullYear(), d.getMonth()+1, 0)); }
+function isoToDate(iso){
+  const p = String(iso||'').split('-');
+  return p.length === 3 ? new Date(+p[0], +p[1]-1, +p[2]) : null;
+}
+function fmtDate(iso){
+  const d = isoToDate(iso);
+  return d ? [String(d.getMonth()+1).padStart(2,'0'), String(d.getDate()).padStart(2,'0'),
+    d.getFullYear()].join('/') : '';
+}
+const esc = s => String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+  .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+/* =========================================================================
+   4. THE MATH — mirrored exactly by the Excel formulas
+   ========================================================================= */
+function calc(inv){
+  const approvedCO  = (inv.changeOrders||[]).reduce((s,c)=> s + n(c.billable), 0);
+  const totalPO     = n(inv.originalPO) + approvedCO;
+  const grossToDate = totalPO * (n(inv.percentComplete)/100);
+  const grossPeriod = grossToDate - n(inv.previousPayments);
+  const retRate     = n(inv.retainageRate)/100;
+  const lessRet     = grossPeriod * retRate;
+  return { approvedCO, totalPO, grossToDate, grossPeriod, lessRet,
+           currentDue: grossPeriod - lessRet, retToDate: grossToDate * retRate };
+}
+
+/* =========================================================================
+   5. EXCEL GENERATOR (verified against the original workbook)
+   ========================================================================= */
+const INK='FF1F2937', BARC='FF374151', PANEL='FFF3F4F6',
+      TINT='FFE8F0FE', AMBER='FFFEF3C7', MINT='FFD1FAE5', WHITE='FFFFFFFF';
+const colNum = s => { let x=0; for(const ch of s) x = x*26 + (ch.charCodeAt(0)-64); return x; };
+
+function buildWorkbook(inv){
+  const wb = new ExcelJS.Workbook();
+  wb.creator = inv.company.name || 'Invoice';
+  const ws = wb.addWorksheet('Invoice', {
+    views:[{showGridLines:false}],
+    pageSetup:{ orientation:'portrait', fitToPage:true, fitToWidth:1, fitToHeight:0,
+      margins:{left:.4,right:.4,top:.5,bottom:.5,header:.2,footer:.2} }
+  });
+  const FONT = 'Arial';
+  const cents = inv.showCents !== false;
+  const MF  = cents ? '\\$#,##0.00;[Red]\\(\\$#,##0.00\\);"-"' : '\\$#,##0;[Red]\\(\\$#,##0\\);"-"';
+  const MF0 = '\\$#,##0;[Red]\\(\\$#,##0\\);"-"';
+
+  ws.columns = [{width:3},{width:27},{width:17},{width:15},{width:19},{width:16},{width:16},{width:3}];
+
+  const set = (addr, val, o) => {
+    o = o || {};
+    const c = ws.getCell(addr);
+    if (val !== undefined) c.value = val;
+    c.font = Object.assign({ name:FONT, size:10 }, o.font);
+    if (o.fill) c.fill = { type:'pattern', pattern:'solid', fgColor:{argb:o.fill} };
+    if (o.fmt) c.numFmt = o.fmt;
+    c.alignment = Object.assign({ vertical:'middle' }, o.align);
+    return c;
+  };
+  const box = (range, style) => {
+    style = style || 'thin';
+    const b = { top:{style}, bottom:{style}, left:{style:'thin'}, right:{style:'thin'} };
+    const m = range.match(/^([A-Z]+)(\d+):([A-Z]+)(\d+)$/);
+    for (let r = +m[2]; r <= +m[4]; r++)
+      for (let c = colNum(m[1]); c <= colNum(m[3]); c++) ws.getCell(r,c).border = b;
+  };
+  const paint = (range, argb) => {
+    const m = range.match(/^([A-Z]+)(\d+):([A-Z]+)(\d+)$/);
+    for (let r = +m[2]; r <= +m[4]; r++)
+      for (let c = colNum(m[1]); c <= colNum(m[3]); c++)
+        ws.getCell(r,c).fill = { type:'pattern', pattern:'solid', fgColor:{argb} };
+  };
+  const bar = (range, text) => {
+    ws.mergeCells(range);
+    set(range.split(':')[0], text, { font:{bold:true,size:11,color:{argb:'FFFFFFFF'}}, fill:BARC,
+      align:{horizontal:'left',indent:1} });
+    ws.getRow(+range.match(/(\d+)/)[1]).height = 20;
+  };
+  const lines = (t, per) => Math.max(1, Math.ceil((t||'').length / per));
+
+  ws.mergeCells('B1:G1');
+  set('B1','INVOICE',{ font:{bold:true,size:18,color:{argb:'FFFFFFFF'}}, fill:INK, align:{horizontal:'center'} });
+  ws.getRow(1).height = 34;
+
+  ws.mergeCells('B2:D5');
+  const co = inv.company;
+  const rt = [{ text:(co.name||'')+'\n', font:{name:FONT,size:11,bold:true,color:{argb:'FF1F2937'}} }];
+  [co.street, co.cityline, co.phone, co.email].filter(Boolean).forEach((l,i,a)=>{
+    rt.push({ text:l + (i<a.length-1?'\n':''), font:{name:FONT,size:10,color:{argb:'FF1F2937'}} });
+  });
+  set('B2',{richText:rt},{ fill:PANEL, align:{horizontal:'left',vertical:'top',wrapText:true,indent:1} });
+  paint('B2:D5', PANEL);
+  ws.getRow(2).height = 22;
+
+  [['Date:',inv.date,'d'],['Invoice #:',inv.invoiceNo],
+   ['Payment Request #:',inv.paymentRequestNo],['Period Ending:',inv.periodEnding,'d']]
+  .forEach(([label,val,kind],i)=>{
+    const r = 2+i;
+    set('E'+r, label, { fill:PANEL, align:{horizontal:'left',indent:1} });
+    ws.mergeCells('F'+r+':G'+r);
+    set('F'+r, val, { fill:PANEL, fmt: kind==='d' ? 'mm/dd/yyyy' : undefined,
+      align:{horizontal:'left',indent:1} });
+  });
+  paint('E2:G5', PANEL); box('B2:G5');
+
+  bar('B6:G6','PROJECT & BILL TO');
+  ws.mergeCells('B7:D11');
+  set('B7','Project:  ' + (inv.project.name||'') +
+      (inv.project.address ? '\n' + inv.project.address : '') +
+      (inv.project.po ? '\nPO #: ' + inv.project.po : ''),
+    { font:{size:11}, fill:PANEL, align:{horizontal:'left',vertical:'top',wrapText:true,indent:1} });
+  ws.mergeCells('E7:G11');
+  set('E7','Bill To:  ' + (inv.billTo||''),
+    { font:{size:11}, fill:PANEL, align:{horizontal:'left',vertical:'top',wrapText:true,indent:1} });
+  paint('B7:G11', PANEL); box('B7:G11');
+  for (let r=7; r<=11; r++) ws.getRow(r).height = 17;
+
+  const cos = (inv.changeOrders||[]).filter(c => (c.desc && c.desc.trim()) || n(c.amount) || n(c.billable));
+  bar('B13:G13','CHANGE ORDERS');
+  const hdr = { font:{bold:true,size:11}, fill:PANEL, align:{horizontal:'center'} };
+  ws.mergeCells('B14:D14');
+  set('B14','Change Order / Description', hdr);
+  set('E14','Amount', hdr); set('F14','Amount Billable', hdr); set('G14','Notes', hdr);
+  paint('B14:G14', PANEL);
+
+  const first = 15;
+  cos.forEach((c,i)=>{
+    const r = first + i;
+    ws.mergeCells('B'+r+':D'+r);
+    set('B'+r, c.desc||'', { font:{size:11}, align:{horizontal:'left',wrapText:true,indent:1} });
+    set('E'+r, n(c.amount),   { font:{size:11}, fmt:MF0, align:{horizontal:'right',indent:1} });
+    set('F'+r, n(c.billable), { font:{size:11}, fmt:MF0, align:{horizontal:'right',indent:1} });
+    set('G'+r, c.notes||'',   { font:{size:10}, align:{horizontal:'left',wrapText:true,indent:1} });
+    ws.getRow(r).height = 15 * Math.max(lines(c.desc,57), lines(c.notes,20));
+  });
+  const last = first + Math.max(cos.length,1) - 1;
+  if (!cos.length){ ws.mergeCells('B'+first+':D'+first); ws.getRow(first).height = 18; }
+
+  const coTotal = last + 1;
+  paint('B'+coTotal+':G'+coTotal, PANEL);
+  ws.mergeCells('B'+coTotal+':E'+coTotal);
+  set('B'+coTotal,'Approved Change Orders (sum billable)',
+    { font:{bold:true,size:11}, fill:PANEL, align:{horizontal:'left',indent:1} });
+  set('F'+coTotal, { formula:'SUM(F'+first+':F'+last+')' },
+    { font:{bold:true,size:11}, fill:PANEL, fmt:MF0, align:{horizontal:'right',indent:1} });
+  box('B14:G'+coTotal);
+
+  const sBar = coTotal + 2;
+  bar('B'+sBar+':G'+sBar, 'SUMMARY');
+  const S = sBar + 1;
+  const R = { origPO:S, apprCO:S+1, totalPO:S+2, pct:S+3, grossDate:S+4, prevPay:S+5,
+              grossPeriod:S+6, retRate:S+7, lessRet:S+8, currDue:S+9, retDate:S+10 };
+  [
+    [R.origPO,'Original Purchase Order Amount', n(inv.originalPO),'input'],
+    [R.apprCO,'Approved Change Orders',{formula:'F'+coTotal},'calc'],
+    [R.totalPO,'Total Current Purchase Order',{formula:'F'+R.origPO+'+F'+R.apprCO},'calc'],
+    [R.pct,'Percentage of Project Completed', n(inv.percentComplete)/100,'pctin'],
+    [R.grossDate,'Gross Amount Due to Date',{formula:'F'+R.totalPO+'*F'+R.pct},'calc'],
+    [R.prevPay,'Less Previous Payment Requests', n(inv.previousPayments),'input'],
+    [R.grossPeriod,'Gross Amount Due this Period',{formula:'F'+R.grossDate+'-F'+R.prevPay},'calc'],
+    [R.retRate,'Retainage Rate', n(inv.retainageRate)/100,'pctin'],
+    [R.lessRet,'Less Retainage',{formula:'F'+R.grossPeriod+'*F'+R.retRate},'calc'],
+    [R.currDue,'Current Amount Due',{formula:'F'+R.grossPeriod+'-F'+R.lessRet},'due'],
+    [R.retDate,'Retainage to Date',{formula:'F'+R.grossDate+'*F'+R.retRate},'calc']
+  ].forEach(([r,label,val,kind])=>{
+    const due = kind === 'due';
+    const rowBg = due ? AMBER : WHITE;
+    const valBg = (kind==='input'||kind==='pctin') ? TINT : rowBg;
+    paint('B'+r+':G'+r, rowBg);
+    ws.mergeCells('B'+r+':E'+r);
+    set('B'+r, label, { font:{bold:due,size:11}, fill:rowBg, align:{horizontal:'left',indent:1} });
+    ws.mergeCells('F'+r+':G'+r);
+    set('F'+r, val, { font:{bold:due,size:11}, fill:valBg,
+      fmt: kind==='pctin' ? '0.0%' : MF, align:{horizontal:'right',indent:1} });
+    ws.getRow(r).height = 18;
+  });
+  box('B'+S+':G'+R.retDate);
+
+  const tRow = R.retDate + 2;
+  paint('B'+tRow+':G'+tRow, MINT);
+  ws.mergeCells('B'+tRow+':E'+tRow);
+  set('B'+tRow,'TOTAL DUE THIS INVOICE', { font:{bold:true,size:12}, fill:MINT,
+    align:{horizontal:'left',indent:1} });
+  ws.mergeCells('F'+tRow+':G'+tRow);
+  set('F'+tRow, { formula:'F'+R.currDue }, { font:{bold:true,size:12}, fill:MINT, fmt:MF,
+    align:{horizontal:'right',indent:1} });
+  ws.getRow(tRow).height = 24;
+  box('B'+tRow+':G'+tRow,'medium');
+
+  const nRow = tRow + 2, nEnd = nRow + 2;
+  ws.mergeCells('B'+nRow+':G'+nEnd);
+  set('B'+nRow, inv.notes||'', { font:{size:10},
+    align:{horizontal:'left',vertical:'top',wrapText:true,indent:1} });
+  box('B'+nRow+':G'+nEnd);
+  for (let r=nRow; r<=nEnd; r++) ws.getRow(r).height = 16;
+
+  ws.pageSetup.printArea = 'B1:G' + nEnd;
+  return wb;
+}
+
+const toExcelPayload = inv => ({
+  company, showCents: company.showCents,
+  date: isoToDate(inv.date), periodEnding: isoToDate(inv.periodEnding),
+  invoiceNo: inv.invoiceNo, paymentRequestNo: inv.paymentRequestNo,
+  project:{ name:inv.projName, address:inv.projAddr, po:inv.projPo },
+  billTo: inv.billTo, changeOrders: inv.changeOrders,
+  originalPO: inv.originalPO, percentComplete: inv.percentComplete,
+  previousPayments: inv.previousPayments, retainageRate: inv.retainageRate,
+  notes: inv.notes
+});
+
+const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+function fileName(){
+  const safe = s => String(s||'').replace(/[^a-z0-9]+/gi,'_').replace(/^_|_$/g,'');
+  return [safe(company.name)||'Invoice', safe(cur.projName), 'Inv'+cur.invoiceNo, cur.periodEnding]
+    .filter(Boolean).join('_') + '.xlsx';
+}
+
+/* Keep a finished File on standby so the share sheet can open the instant
+   Send is tapped — Safari only allows sharing inside a real user gesture. */
+let readyFile = null, buildTimer = null, buildVersion = 0;
+function scheduleBuild(delay){
+  clearTimeout(buildTimer);
+  readyFile = null;
+  buildVersion++;
+  buildTimer = setTimeout(makeFile, delay === undefined ? 250 : delay);
+}
+async function makeFile(){
+  if (typeof ExcelJS === 'undefined') return null;
+  const mine = buildVersion;
+  try{
+    const buf = await buildWorkbook(toExcelPayload(cur)).xlsx.writeBuffer();
+    const f = new File([buf], fileName(), { type: XLSX_MIME });
+    if (mine !== buildVersion) return f;   // data changed mid-build: use it now, don't cache it
+    readyFile = f;
+    return f;
+  }catch(e){ console.error(e); return null; }
+}
+/* Whenever a field is left or a picker changes, build right away rather than waiting. */
+document.addEventListener('change', () => { if (!readyFile) makeFile(); }, true);
+document.addEventListener('focusout', () => { if (!readyFile) makeFile(); }, true);
+function canShareFiles(f){
+  try{ return !!(navigator.canShare && navigator.canShare({files:[f]})); }catch(e){ return false; }
+}
+
+/* =========================================================================
+   6. INVOICE OBJECT
+   ========================================================================= */
+const blankInvoice = () => ({
+  projectId:null, projName:'', projAddr:'', projPo:'', billTo:'', custEmail:'',
+  date: todayISO(), periodEnding: endOfMonthISO(),
+  invoiceNo:1, paymentRequestNo:1,
+  originalPO:0, percentComplete:0, previousPayments:0, retainageRate:0,
+  changeOrders:[{desc:'',amount:'',billable:'',notes:''}],
+  notes: company.defaultNotes
+});
+function loadProject(p){
+  Object.assign(cur, {
+    projectId:p.id, projName:p.name, projAddr:p.address||'', projPo:p.po||'',
+    billTo:p.billTo||'', custEmail:p.email||'',
+    originalPO:p.originalPO||0, retainageRate:p.retainageRate||0,
+    previousPayments:p.previousPayments||0, percentComplete:p.lastPercent||0,
+    invoiceNo:p.nextInvoiceNo||1, paymentRequestNo:p.nextInvoiceNo||1,
+    changeOrders:(p.changeOrders&&p.changeOrders.length)
+      ? p.changeOrders.map(c=>({...c})) : [{desc:'',amount:'',billable:'',notes:''}],
+    notes:p.notes||company.defaultNotes
+  });
+}
+
+/* =========================================================================
+   7. RENDER — form
+   ========================================================================= */
+function fillPicker(){
+  const sel = $('projPick');
+  sel.innerHTML = '<option value="">— Not saved yet —</option>' +
+    projects.map(p=>`<option value="${p.id}">${esc(p.name||'Untitled')}</option>`).join('') +
+    '<option value="__new">+ Start a new project</option>';
+  sel.value = cur.projectId || '';
+}
+function renderForm(){
+  fillPicker();
+  $('pName').value=cur.projName; $('pPo').value=cur.projPo; $('pAddr').value=cur.projAddr;
+  $('pBill').value=cur.billTo;   $('pEmail').value=cur.custEmail;
+  $('iDate').value=cur.date;     $('iPeriod').value=cur.periodEnding;
+  $('iNo').value=cur.invoiceNo;  $('iPr').value=cur.paymentRequestNo;
+  $('pct').value=cur.percentComplete; $('pctRange').value=Math.min(100,n(cur.percentComplete));
+  $('origPO').value = cur.originalPO ? Number(cur.originalPO).toLocaleString('en-US') : '';
+  $('retRate').value = cur.retainageRate;
+  $('prevPay').value = cur.previousPayments ? Number(cur.previousPayments).toLocaleString('en-US') : '';
+  $('iNotes').value = cur.notes;
+  renderCoRows();
+  const p = projects.find(x=>x.id===cur.projectId);
+  $('prevHint').textContent = p && p.lastInvoiceNo
+    ? 'Carried forward from invoice #'+p.lastInvoiceNo+' — everything billed on this project so far.'
+    : 'Everything already billed on this project. Fills itself in after each saved invoice.';
+}
+function renderCoRows(){
+  $('coBody').innerHTML = cur.changeOrders.map((c,i)=>`
+    <div class="corow" data-i="${i}">
+      <label><span>Description</span>
+        <input type="text" data-f="desc" value="${esc(c.desc)}" placeholder="Description of change order"></label>
+      <div class="nums">
+        <label><span>Amount</span>
+          <input type="text" class="num" data-f="amount" inputmode="decimal" value="${esc(c.amount)}" placeholder="0"></label>
+        <label><span>Billable</span>
+          <input type="text" class="num" data-f="billable" inputmode="decimal" value="${esc(c.billable)}" placeholder="0"></label>
+      </div>
+      <label><span>Notes</span>
+        <input type="text" data-f="notes" value="${esc(c.notes)}" placeholder="optional"></label>
+      <button class="kill" data-del="${i}" aria-label="Remove change order">&times;</button>
+    </div>`).join('');
+}
+
+/* =========================================================================
+   8. RENDER — totals + live preview
+   ========================================================================= */
+function renderAll(){
+  const c = calc(cur);
+  $('coSum').textContent = money0(c.approvedCO);
+  $('dueBig').textContent = money(c.currentDue);
+  $('hTitle').textContent = cur.projName || 'New invoice';
+  $('hSub').textContent = cur.projName
+    ? 'Invoice #'+cur.invoiceNo+' · period ending '+fmtDate(cur.periodEnding)
+    : 'Pick a project to start';
+
+  const coRows = cur.changeOrders
+    .filter(x=>(x.desc&&x.desc.trim())||n(x.amount)||n(x.billable))
+    .map(x=>`<tr><td>${esc(x.desc)}</td><td class="r">${money0(x.amount)}</td>
+      <td class="r">${money0(x.billable)}</td><td>${esc(x.notes)}</td></tr>`).join('')
+    || '<tr><td colspan="4" style="color:#9ca3af">No change orders yet</td></tr>';
+
+  const sum = [
+    ['Original Purchase Order Amount', money(cur.originalPO),'inp'],
+    ['Approved Change Orders', money(c.approvedCO),''],
+    ['Total Current Purchase Order', money(c.totalPO),''],
+    ['Percentage of Project Completed', n(cur.percentComplete).toFixed(1)+'%','inp'],
+    ['Gross Amount Due to Date', money(c.grossToDate),''],
+    ['Less Previous Payment Requests', money(cur.previousPayments),'inp'],
+    ['Gross Amount Due this Period', money(c.grossPeriod),''],
+    ['Retainage Rate', n(cur.retainageRate).toFixed(1)+'%','inp'],
+    ['Less Retainage', money(c.lessRet),''],
+    ['Current Amount Due', money(c.currentDue),'due'],
+    ['Retainage to Date', money(c.retToDate),'']
+  ].map(([l,v,k])=>`<tr class="${k==='due'?'due':''}"><td>${l}</td>
+      <td class="r num ${k==='inp'?'inp':''}">${v}</td></tr>`).join('');
+
+  const addr = [company.name, company.street, company.cityline, company.phone, company.email].filter(Boolean);
+
+  $('sheet').innerHTML = `
+    <div class="title">INVOICE</div>
+    <div class="meta">
+      <div class="left"><b>${esc(addr[0]||'')}</b>${addr.slice(1).map(l=>'\n'+esc(l)).join('')}</div>
+      <div class="right">
+        <div><span>Date:</span><b class="num">${fmtDate(cur.date)}</b></div>
+        <div><span>Invoice #:</span><b class="num">${esc(cur.invoiceNo)}</b></div>
+        <div><span>Payment Request #:</span><b class="num">${esc(cur.paymentRequestNo)}</b></div>
+        <div><span>Period Ending:</span><b class="num">${fmtDate(cur.periodEnding)}</b></div>
+      </div>
+    </div>
+    <div class="bar">PROJECT &amp; BILL TO</div>
+    <div class="party">
+      <div><span class="lbl">Project:</span> ${esc(cur.projName)}${cur.projAddr?'\n'+esc(cur.projAddr):''}${cur.projPo?'\nPO #: '+esc(cur.projPo):''}</div>
+      <div><span class="lbl">Bill To:</span> ${esc(cur.billTo)}</div>
+    </div>
+    <div class="bar">CHANGE ORDERS</div>
+    <table>
+      <tr><th>Change Order / Description</th><th style="width:86px">Amount</th>
+          <th style="width:92px">Amount Billable</th><th style="width:92px">Notes</th></tr>
+      ${coRows}
+      <tr class="tot"><td>Approved Change Orders (sum billable)</td><td></td>
+        <td class="r num">${money0(c.approvedCO)}</td><td></td></tr>
+    </table>
+    <div class="bar" style="margin-top:14px">SUMMARY</div>
+    <table class="sum">${sum}</table>
+    <div class="grand"><span>TOTAL DUE THIS INVOICE</span><span class="num">${money(c.currentDue)}</span></div>
+    <div class="pad"><div class="notes">${esc(cur.notes)}</div></div>`;
+
+  scheduleBuild();
+}
+
+/* =========================================================================
+   9. INPUT WIRING
+   ========================================================================= */
+const bindText = (id,key) => $(id).addEventListener('input', e => { cur[key]=e.target.value; renderAll(); });
+function bindNum(id,key){
+  $(id).addEventListener('input', e => { cur[key]=n(e.target.value); renderAll(); });
+  $(id).addEventListener('blur', e => {
+    const v = n(e.target.value);
+    e.target.value = v ? v.toLocaleString('en-US',{maximumFractionDigits:2}) : '';
+  });
+}
+bindText('pName','projName'); bindText('pPo','projPo'); bindText('pAddr','projAddr');
+bindText('pBill','billTo');   bindText('pEmail','custEmail');
+bindText('iNo','invoiceNo');  bindText('iPr','paymentRequestNo');
+bindText('iDate','date');     bindText('iPeriod','periodEnding');
+bindText('iNotes','notes');
+bindNum('origPO','originalPO'); bindNum('prevPay','previousPayments');
+$('retRate').addEventListener('input', e => { cur.retainageRate=n(e.target.value); renderAll(); });
+$('pct').addEventListener('input', e => {
+  cur.percentComplete = n(e.target.value);
+  $('pctRange').value = Math.min(100, cur.percentComplete); renderAll();
+});
+$('pctRange').addEventListener('input', e => {
+  cur.percentComplete = n(e.target.value);
+  $('pct').value = cur.percentComplete; renderAll();
+});
+$('coBody').addEventListener('input', e => {
+  const f = e.target.dataset.f; if(!f) return;
+  const row = e.target.closest('.corow'), i = +row.dataset.i;
+  cur.changeOrders[i][f] = e.target.value;
+  if (f==='amount' && !String(cur.changeOrders[i].billable).trim()){
+    cur.changeOrders[i].billable = e.target.value;
+    const b = row.querySelector('[data-f=billable]');
+    if (b) b.value = e.target.value;
+  }
+  renderAll();
+});
+$('coBody').addEventListener('click', e => {
+  const d = e.target.closest('[data-del]'); if(!d) return;
+  cur.changeOrders.splice(+d.dataset.del,1);
+  if(!cur.changeOrders.length) cur.changeOrders.push({desc:'',amount:'',billable:'',notes:''});
+  renderCoRows(); renderAll();
+});
+$('addCo').addEventListener('click', () => {
+  cur.changeOrders.push({desc:'',amount:'',billable:'',notes:''});
+  renderCoRows(); renderAll();
+  const rows = $('coBody').querySelectorAll('.corow');
+  if (rows.length) rows[rows.length-1].querySelector('input').focus();
+});
+$('projPick').addEventListener('change', e => {
+  const v = e.target.value;
+  if (v==='__new'){ cur = blankInvoice(); editingId = null; renderForm(); renderAll(); return; }
+  if (!v){ cur.projectId = null; renderForm(); renderAll(); return; }
+  const p = projects.find(x=>x.id===v);
+  if (p){ loadProject(p); editingId = null; renderForm(); renderAll(); }
+});
+
+/* =========================================================================
+   10. SAVE
+   ========================================================================= */
+function toast(msg, bad){
+  const t = $('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (bad?' bad':'');
+  clearTimeout(t._h);
+  t._h = setTimeout(()=> t.className='toast', 3200);
+}
+function syncProject(){
+  const c = calc(cur);
+  let p = projects.find(x=>x.id===cur.projectId);
+  if (!p){ p = { id: uid() }; projects.push(p); cur.projectId = p.id; }
+  Object.assign(p, {
+    name: cur.projName || 'Untitled project', address:cur.projAddr, po:cur.projPo,
+    billTo:cur.billTo, email:cur.custEmail,
+    originalPO:n(cur.originalPO), retainageRate:n(cur.retainageRate),
+    changeOrders:cur.changeOrders.map(x=>({...x})), notes:cur.notes,
+    lastPercent:n(cur.percentComplete), lastInvoiceNo:cur.invoiceNo,
+    previousPayments:+c.grossToDate.toFixed(2),
+    nextInvoiceNo:(parseInt(cur.invoiceNo,10)||0)+1
+  });
+  return p;
+}
+function needsName(){
+  if (String(cur.projName).trim()) return false;
+  showPane('invoice'); toast('Give the project a name first', true); $('pName').focus();
+  return true;
+}
+async function saveInvoice(silent){
+  if (needsName()) return false;
+  const c = calc(cur);
+  const p = syncProject();
+  const rec = { id: editingId||uid(), savedAt:new Date().toISOString(),
+                currentDue:+c.currentDue.toFixed(2), data: JSON.parse(JSON.stringify(cur)) };
+  const at = history.findIndex(h=>h.id===rec.id);
+  if (at>=0) history[at]=rec; else history.unshift(rec);
+  editingId = rec.id;
+  await Store.set(K_PROJ, projects);
+  await Store.set(K_HIST, history);
+  fillPicker();
+  if (!silent) toast('Saved · next invoice starts at #'+p.nextInvoiceNo);
+  return true;
+}
+
+/* =========================================================================
+   11. SHARE — hands the real .xlsx to the system share sheet
+   ========================================================================= */
+const subjectLine = () => 'Invoice #'+cur.invoiceNo+' — '+(cur.projName||'')+' — '+(company.name||'');
+function shareNote(){
+  const c = calc(cur);
+  return 'Invoice #'+cur.invoiceNo+' for '+(cur.projName||'the project')+
+    ', period ending '+fmtDate(cur.periodEnding)+'.\nAmount due: '+money(c.currentDue)+'\n\n'+
+    (company.fromName?company.fromName+'\n':'')+(company.name||'')+
+    (company.phone?'\n'+company.phone:'');
+}
+function downloadFile(file){
+  const url = URL.createObjectURL(file);
+  const a = document.createElement('a');
+  a.href = url; a.download = file.name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url), 5000);
+}
+function mailtoDraft(){
+  window.location.href = 'mailto:'+encodeURIComponent(cur.custEmail||'')+
+    '?subject='+encodeURIComponent(subjectLine())+'&body='+encodeURIComponent(shareNote());
+}
+function shareOrFallback(file, secondTry){
+  if (canShareFiles(file)){
+    navigator.share({ files:[file], title: subjectLine(), text: shareNote() })
+      .then(()=> toast('Invoice shared'))
+      .catch(err => {
+        if (err && err.name === 'AbortError') return;
+        if (err && err.name === 'NotAllowedError' && !secondTry){
+          toast('Invoice is ready — tap Share once more');
+          return;
+        }
+        downloadFile(file);
+        toast('Invoice saved to your files — share it from there');
+      });
+  } else {
+    downloadFile(file);
+    toast('Invoice saved to your files — share it from there');
+  }
+}
+function withFile(fn, whenNotReady){
+  if (needsName()) return;
+  saveInvoice(true);
+  if (readyFile){ fn(readyFile, true); return; }
+  if (whenNotReady) whenNotReady();
+  makeFile().then(file => {
+    if (!file){ toast('Could not build the file — check your connection', true); return; }
+    fn(file, false);
+  });
+}
+
+$('btnShare').addEventListener('click', function(){
+  withFile(shareOrFallback, ()=> toast('Building the invoice…'));
+});
+
+$('btnFile').addEventListener('click', function(){
+  withFile(file => { downloadFile(file); toast('Excel file saved'); });
+});
+
+$('btnEmail').addEventListener('click', function(){
+  withFile(file => {
+    downloadFile(file);
+    setTimeout(mailtoDraft, 700);
+    toast('Invoice saved — attach it to the draft');
+  }, ()=> toast('Building the invoice…'));
+});
+
+$('btnSave').addEventListener('click', ()=> saveInvoice());
+$('btnPrint').addEventListener('click', ()=> window.print());
+$('btnNew').addEventListener('click', ()=>{
+  cur = blankInvoice(); editingId = null; renderForm(); renderAll(); toast('Blank invoice started');
+});
+
+/* =========================================================================
+   12. NAVIGATION
+   ========================================================================= */
+function showPane(v){
+  document.body.className = 'v-'+v;
+  document.querySelectorAll('.tabbar button,.wide-nav button')
+    .forEach(b=> b.classList.toggle('on', b.dataset.v===v));
+  if (v==='projects') renderProjects();
+  if (v==='saved') renderSaved();
+  if (v==='settings') renderSettings();
+  window.scrollTo(0,0);
+}
+document.querySelectorAll('.tabbar button,.wide-nav button')
+  .forEach(b=> b.addEventListener('click', ()=> showPane(b.dataset.v)));
+
+/* =========================================================================
+   13. PROJECTS / SAVED / SETTINGS
+   ========================================================================= */
+function renderProjects(){
+  $('paneProjects').innerHTML = `
+    <div class="card"><h2>Projects</h2><div class="body">
+      <p class="hint" style="margin:0 0 10px">Each project remembers its purchase order, change orders, retainage and how much you have billed.</p>
+      ${projects.length ? projects.map(p=>`
+        <div class="rowitem"><div class="main">
+          <b>${esc(p.name)}</b>
+          <small>${esc((p.billTo||'').split('\n')[0])} · PO ${money0(p.originalPO)} · billed ${money(p.previousPayments||0)} · next #${esc(p.nextInvoiceNo||1)}</small>
+        </div>
+        <button class="btn" data-use="${p.id}">New invoice</button>
+        <button class="btn" data-rm="${p.id}">Delete</button></div>`).join('')
+        : '<div class="empty">No projects yet. Start one on the Invoice tab.</div>'}
+    </div></div>
+    <div class="card"><h2>Backup</h2><div class="body">
+      <p class="hint" style="margin:0 0 10px">Your data lives on this device. Save a backup now and then, or to move to another iPad or computer.</p>
+      <button class="btn wide" id="btnBackup">Save backup file</button>
+      <button class="btn wide" id="btnRestore">Restore from backup</button>
+      <input type="file" id="restoreFile" accept="application/json,.json" style="display:none">
+    </div></div>`;
+  $('paneProjects').querySelectorAll('[data-use]').forEach(b=> b.addEventListener('click', ()=>{
+    cur = blankInvoice(); editingId = null;
+    loadProject(projects.find(x=>x.id===b.dataset.use));
+    renderForm(); renderAll(); showPane('invoice');
+  }));
+  $('paneProjects').querySelectorAll('[data-rm]').forEach(b=> b.addEventListener('click', async ()=>{
+    const p = projects.find(x=>x.id===b.dataset.rm);
+    if (!confirm('Delete "'+p.name+'"? Saved invoices are kept.')) return;
+    projects = projects.filter(x=>x.id!==p.id);
+    await Store.set(K_PROJ, projects);
+    renderProjects(); fillPicker(); toast('Project deleted');
+  }));
+  $('btnBackup').addEventListener('click', ()=>{
+    const f = new File([JSON.stringify({company,projects,history},null,2)],
+      'invoice-backup-'+todayISO()+'.json', {type:'application/json'});
+    if (canShareFiles(f)) navigator.share({files:[f]}).catch(()=>downloadFile(f));
+    else downloadFile(f);
+  });
+  $('btnRestore').addEventListener('click', ()=> $('restoreFile').click());
+  $('restoreFile').addEventListener('change', e=>{
+    const f = e.target.files[0]; if(!f) return;
+    const r = new FileReader();
+    r.onload = async ()=>{
+      try{
+        const d = JSON.parse(r.result);
+        if (d.company) company = Object.assign(company, d.company);
+        if (d.projects) projects = d.projects;
+        if (d.history) history = d.history;
+        await Store.set(K_CO,company); await Store.set(K_PROJ,projects); await Store.set(K_HIST,history);
+        renderProjects(); fillPicker(); renderAll(); toast('Backup restored');
+      }catch(err){ toast('That file could not be read', true); }
+    };
+    r.readAsText(f);
+  });
+}
+
+function renderSaved(){
+  $('paneSaved').innerHTML = `<div class="card"><h2>Saved invoices</h2><div class="body">
+    ${history.length ? history.map(h=>`
+      <div class="rowitem"><div class="main">
+        <b>#${esc(h.data.invoiceNo)} — ${esc(h.data.projName)}</b>
+        <small>Period ending ${fmtDate(h.data.periodEnding)} · ${money(h.currentDue)}</small>
+      </div>
+      <button class="btn" data-open="${h.id}">Open</button>
+      <button class="btn" data-copy="${h.id}">Duplicate</button></div>`).join('')
+      : '<div class="empty">No saved invoices yet.</div>'}
+  </div></div>`;
+  $('paneSaved').querySelectorAll('[data-open]').forEach(b=> b.addEventListener('click', ()=>{
+    const h = history.find(x=>x.id===b.dataset.open);
+    cur = JSON.parse(JSON.stringify(h.data)); editingId = h.id;
+    renderForm(); renderAll(); showPane('invoice');
+  }));
+  $('paneSaved').querySelectorAll('[data-copy]').forEach(b=> b.addEventListener('click', ()=>{
+    const h = history.find(x=>x.id===b.dataset.copy);
+    cur = JSON.parse(JSON.stringify(h.data)); editingId = null;
+    cur.invoiceNo = (parseInt(cur.invoiceNo,10)||0)+1;
+    cur.paymentRequestNo = cur.invoiceNo;
+    cur.date = todayISO(); cur.periodEnding = endOfMonthISO();
+    renderForm(); renderAll(); showPane('invoice');
+    toast('Copied to invoice #'+cur.invoiceNo);
+  }));
+}
+
+function renderSettings(){
+  $('paneSettings').innerHTML = `<div class="card"><h2>Your company</h2><div class="body">
+    <p class="hint" style="margin:0 0 12px">This appears at the top of every invoice. Set it once.</p>
+    <label class="field"><span>Company name</span><input type="text" id="sName" value="${esc(company.name)}"></label>
+    <label class="field"><span>Street address</span><input type="text" id="sStreet" value="${esc(company.street)}"></label>
+    <label class="field"><span>City, state, ZIP</span><input type="text" id="sCity" value="${esc(company.cityline)}"></label>
+    <div class="g2">
+      <label class="field"><span>Phone</span><input type="text" id="sPhone" inputmode="tel" value="${esc(company.phone)}"></label>
+      <label class="field"><span>Company email</span><input type="text" id="sEmail" inputmode="email" autocapitalize="off" value="${esc(company.email)}"></label>
+    </div>
+    <label class="field"><span>Your name (signs off emails)</span><input type="text" id="sFrom" value="${esc(company.fromName)}"></label>
+    <label class="field"><span>Default notes and payment terms</span><textarea id="sNotes">${esc(company.defaultNotes)}</textarea></label>
+    <label class="field" style="display:flex; align-items:center; gap:10px">
+      <input type="checkbox" id="sCents" ${company.showCents?'checked':''} style="width:24px;height:24px;min-height:0;accent-color:var(--steel)">
+      <span style="margin:0">Show cents (off rounds to whole dollars)</span>
+    </label>
+    <button class="btn primary wide" id="sSave">Save settings</button>
+  </div></div>
+  <div class="card"><h2>How sharing works</h2><div class="body">
+    <p class="hint" id="sendCap" style="margin:0 0 8px"></p>
+    <p class="hint" style="margin:0">Share hands the finished spreadsheet to your device's share sheet, so you can
+    send it by email or text message, AirDrop it, drop it in Files, or use any other app on the device — the
+    invoice goes along as a real attachment. If a browser has no share sheet, the invoice downloads instead and
+    you attach it yourself; <b>Email draft</b> under Notes and terms opens a pre-written message for that case.</p>
+  </div></div>
+  <div class="card"><h2>Put this on your home screen</h2><div class="body">
+    <p class="hint" style="margin:0">On iPad or iPhone, open this page in Safari, tap the Share button, and choose <b>Add to Home Screen</b>. It then opens full screen like a regular app.</p>
+  </div></div>`;
+  $('sendCap').innerHTML = canShareFiles(new File([''],'t.xlsx',{type:XLSX_MIME}))
+    ? '<b>This device has a share sheet.</b> Tap Share and pick Mail, Messages, AirDrop or anything else — the invoice goes with it.'
+    : '<b>This browser has no share sheet.</b> Share will save the invoice to your files so you can attach it yourself. Open the app in Safari on your iPad for one-tap sharing.';
+  $('sSave').addEventListener('click', async ()=>{
+    company = { name:$('sName').value, street:$('sStreet').value, cityline:$('sCity').value,
+      phone:$('sPhone').value, email:$('sEmail').value, fromName:$('sFrom').value,
+      defaultNotes:$('sNotes').value, showCents:$('sCents').checked };
+    await Store.set(K_CO, company);
+    renderAll(); toast('Settings saved');
+  });
+}
+
+/* =========================================================================
+   14. BOOT
+   ========================================================================= */
+(async function init(){
+  const [c,p,h] = await Promise.all([Store.get(K_CO), Store.get(K_PROJ), Store.get(K_HIST)]);
+  if (c) company = Object.assign(company, c);
+  if (p) projects = p;
+  if (h) history = h;
+
+  cur = blankInvoice();
+  if (projects.length) loadProject(projects[0]);
+  renderForm(); renderAll();
+  scheduleBuild(0);
+
+  let w = '';
+  if (typeof ExcelJS === 'undefined')
+    w += '<div class="warn">The Excel engine did not load, so <b>Share</b> and <b>Save file</b> need an internet connection. Print still works.</div>';
+  if (Store.mode === 'memory')
+    w += '<div class="warn">This browser is blocking storage, so projects will not be remembered after you close the tab. Use <b>Save backup file</b> under Projects.</div>';
+  if (!canShareFiles(new File([''],'t.xlsx',{type:XLSX_MIME})))
+    w += '<div class="warn">This browser has no share sheet, so <b>Share</b> will save the invoice to your files instead. Open this page in Safari on your iPad to share it straight to Mail, Messages or anywhere else.</div>';
+  $('warnings').innerHTML = w;
+})();
+</script>
+</body>
+</html>
