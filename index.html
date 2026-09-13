@@ -478,6 +478,7 @@ const colNum = s => { let x=0; for(const ch of s) x = x*26 + (ch.charCodeAt(0)-6
 function buildWorkbook(inv){
   const wb = new ExcelJS.Workbook();
   wb.creator = inv.company.name || 'Invoice';
+  wb.calcProperties.fullCalcOnLoad = true;
   const ws = wb.addWorksheet('Invoice', {
     views:[{showGridLines:false}],
     pageSetup:{ orientation:'portrait', fitToPage:true, fitToWidth:1, fitToHeight:0,
@@ -559,6 +560,22 @@ function buildWorkbook(inv){
   for (let r=7; r<=11; r++) ws.getRow(r).height = 17;
 
   const cos = (inv.changeOrders||[]).filter(c => (c.desc && c.desc.trim()) || n(c.amount) || n(c.billable));
+
+  /* Cached results. Formula cells carry both the formula and its value: Excel
+     recalculates live, while preview windows (iOS Quick Look, Mail, Gmail,
+     Drive) that never recalculate still show numbers instead of blanks. */
+  const vApprovedCO  = cos.reduce((s,c)=> s + n(c.billable), 0);
+  const vOrigPO      = n(inv.originalPO);
+  const vTotalPO     = vOrigPO + vApprovedCO;
+  const vPct         = n(inv.percentComplete)/100;
+  const vGrossDate   = vTotalPO * vPct;
+  const vPrev        = n(inv.previousPayments);
+  const vGrossPeriod = vGrossDate - vPrev;
+  const vRet         = n(inv.retainageRate)/100;
+  const vLessRet     = vGrossPeriod * vRet;
+  const vCurrDue     = vGrossPeriod - vLessRet;
+  const vRetDate     = vGrossDate * vRet;
+
   bar('B13:G13','CHANGE ORDERS');
   const hdr = { font:{bold:true,size:11}, fill:PANEL, align:{horizontal:'center'} };
   ws.mergeCells('B14:D14');
@@ -584,7 +601,7 @@ function buildWorkbook(inv){
   ws.mergeCells('B'+coTotal+':E'+coTotal);
   set('B'+coTotal,'Approved Change Orders (sum billable)',
     { font:{bold:true,size:11}, fill:PANEL, align:{horizontal:'left',indent:1} });
-  set('F'+coTotal, { formula:'SUM(F'+first+':F'+last+')' },
+  set('F'+coTotal, { formula:'SUM(F'+first+':F'+last+')', result: vApprovedCO },
     { font:{bold:true,size:11}, fill:PANEL, fmt:MF0, align:{horizontal:'right',indent:1} });
   box('B14:G'+coTotal);
 
@@ -594,17 +611,17 @@ function buildWorkbook(inv){
   const R = { origPO:S, apprCO:S+1, totalPO:S+2, pct:S+3, grossDate:S+4, prevPay:S+5,
               grossPeriod:S+6, retRate:S+7, lessRet:S+8, currDue:S+9, retDate:S+10 };
   [
-    [R.origPO,'Original Purchase Order Amount', n(inv.originalPO),'input'],
-    [R.apprCO,'Approved Change Orders',{formula:'F'+coTotal},'calc'],
-    [R.totalPO,'Total Current Purchase Order',{formula:'F'+R.origPO+'+F'+R.apprCO},'calc'],
-    [R.pct,'Percentage of Project Completed', n(inv.percentComplete)/100,'pctin'],
-    [R.grossDate,'Gross Amount Due to Date',{formula:'F'+R.totalPO+'*F'+R.pct},'calc'],
-    [R.prevPay,'Less Previous Payment Requests', n(inv.previousPayments),'input'],
-    [R.grossPeriod,'Gross Amount Due this Period',{formula:'F'+R.grossDate+'-F'+R.prevPay},'calc'],
-    [R.retRate,'Retainage Rate', n(inv.retainageRate)/100,'pctin'],
-    [R.lessRet,'Less Retainage',{formula:'F'+R.grossPeriod+'*F'+R.retRate},'calc'],
-    [R.currDue,'Current Amount Due',{formula:'F'+R.grossPeriod+'-F'+R.lessRet},'due'],
-    [R.retDate,'Retainage to Date',{formula:'F'+R.grossDate+'*F'+R.retRate},'calc']
+    [R.origPO,'Original Purchase Order Amount', vOrigPO,'input'],
+    [R.apprCO,'Approved Change Orders',{formula:'F'+coTotal, result:vApprovedCO},'calc'],
+    [R.totalPO,'Total Current Purchase Order',{formula:'F'+R.origPO+'+F'+R.apprCO, result:vTotalPO},'calc'],
+    [R.pct,'Percentage of Project Completed', vPct,'pctin'],
+    [R.grossDate,'Gross Amount Due to Date',{formula:'F'+R.totalPO+'*F'+R.pct, result:vGrossDate},'calc'],
+    [R.prevPay,'Less Previous Payment Requests', vPrev,'input'],
+    [R.grossPeriod,'Gross Amount Due this Period',{formula:'F'+R.grossDate+'-F'+R.prevPay, result:vGrossPeriod},'calc'],
+    [R.retRate,'Retainage Rate', vRet,'pctin'],
+    [R.lessRet,'Less Retainage',{formula:'F'+R.grossPeriod+'*F'+R.retRate, result:vLessRet},'calc'],
+    [R.currDue,'Current Amount Due',{formula:'F'+R.grossPeriod+'-F'+R.lessRet, result:vCurrDue},'due'],
+    [R.retDate,'Retainage to Date',{formula:'F'+R.grossDate+'*F'+R.retRate, result:vRetDate},'calc']
   ].forEach(([r,label,val,kind])=>{
     const due = kind === 'due';
     const rowBg = due ? AMBER : WHITE;
@@ -625,8 +642,8 @@ function buildWorkbook(inv){
   set('B'+tRow,'TOTAL DUE THIS INVOICE', { font:{bold:true,size:12}, fill:MINT,
     align:{horizontal:'left',indent:1} });
   ws.mergeCells('F'+tRow+':G'+tRow);
-  set('F'+tRow, { formula:'F'+R.currDue }, { font:{bold:true,size:12}, fill:MINT, fmt:MF,
-    align:{horizontal:'right',indent:1} });
+  set('F'+tRow, { formula:'F'+R.currDue, result:vCurrDue },
+    { font:{bold:true,size:12}, fill:MINT, fmt:MF, align:{horizontal:'right',indent:1} });
   ws.getRow(tRow).height = 24;
   box('B'+tRow+':G'+tRow,'medium');
 
