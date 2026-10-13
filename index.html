@@ -13,15 +13,17 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
 <style>
 :root{
-  --ink:#1f2937; --slate:#374151; --panel:#f3f4f6; --rule:#d7dce1;
-  --paper:#fff; --desk:#e9ecef; --amber:#fef3c7; --amber-ink:#8a5a06;
-  --mint:#d1fae5; --tint:#e8f0fe; --steel:#2c5282; --steel-dark:#1e3a5f;
-  --muted:#6b7280; --danger:#9b1c1c;
-  --sans:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Helvetica,Arial,sans-serif;
+  --ink:#1f2937; --slate:#374151; --rule:#d7dce1; --rule-soft:#e8ebef;
+  --paper:#fff; --desk:#eceef1; --muted:#6b7280;
+  --steel:#2c5282; --steel-dark:#1e3a5f;
+  --accent:#1f3a5f; --accent-tint:#eaf0f7;
+  --danger:#9b1c1c;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","Helvetica Neue",Helvetica,Arial,sans-serif;
   --tap:46px;
   --bar:calc(58px + env(safe-area-inset-bottom));
   --tabs:calc(54px + env(safe-area-inset-bottom));
 }
+[hidden]{display:none !important}
 *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
 html{-webkit-text-size-adjust:100%}
 html,body{margin:0;padding:0}
@@ -39,12 +41,13 @@ button{touch-action:manipulation}
   background:var(--ink); color:#fff;
   padding:env(safe-area-inset-top) 16px 0;
 }
-.appbar .in{display:flex; align-items:center; gap:14px; min-height:54px}
+.appbar .in{display:flex; align-items:center; gap:14px; min-height:54px; max-width:1500px; margin:0 auto}
 .who{min-width:0; flex:1}
 .who b{display:block; font-size:16px; font-weight:600; white-space:nowrap;
   overflow:hidden; text-overflow:ellipsis}
 .who small{display:block; font-size:12px; color:#9fb3c8; white-space:nowrap;
   overflow:hidden; text-overflow:ellipsis}
+.who small i{font-style:normal; color:#fcd34d}
 .wide-nav{display:none; gap:4px}
 .wide-nav button{
   background:transparent; border:0; color:#cbd5e1; padding:8px 12px;
@@ -70,7 +73,7 @@ body.v-settings #paneSettings{display:block}
 .step > h2,.card > h2{
   margin:0; font-size:15px; font-weight:600; padding:13px 16px 13px 44px;
   border-bottom:1px solid var(--rule); background:#fafbfc; border-radius:12px 12px 0 0;
-  position:relative;
+  position:relative; display:flex; align-items:center; gap:10px;
 }
 .card > h2{padding-left:16px}
 .step > h2::before{
@@ -78,12 +81,13 @@ body.v-settings #paneSettings{display:block}
   width:21px; height:21px; border-radius:50%; background:var(--steel); color:#fff;
   font-size:12px; font-weight:700; display:grid; place-items:center;
 }
+.step > h2 .aside,.card > h2 .aside{margin-left:auto; font-size:12.5px; font-weight:500; color:var(--muted)}
 .step .body,.card .body{padding:14px 16px; container-type:inline-size}
 .hint{font-size:13px; color:var(--muted); margin:6px 0 0}
 
 .field{display:block; margin-bottom:14px}
 .field > span{display:block; font-size:13px; color:var(--muted); margin-bottom:5px; font-weight:500}
-input[type=text],input[type=date],input[type=email],select,textarea{
+input[type=text],input[type=date],input[type=email],input[type=search],select,textarea{
   width:100%; min-height:var(--tap); padding:10px 12px; border:1px solid var(--rule);
   border-radius:9px; background:#fff; outline:none; -webkit-appearance:none; appearance:none;
 }
@@ -100,33 +104,62 @@ input:focus,select:focus,textarea:focus{border-color:var(--steel); box-shadow:0 
 .pctwrap input[type=range]{flex:1; height:var(--tap); accent-color:var(--steel); background:transparent}
 .pctwrap .box{width:104px; flex:none; text-align:center; font-size:19px; font-weight:600}
 
-/* ============ change orders ============ */
+/* project summary (collapsed) */
+.projsum{display:flex; align-items:center; gap:12px; padding:11px 13px; border:1px solid var(--rule);
+  border-radius:10px; background:#fafbfc; margin-bottom:14px}
+.projsum .m{flex:1; min-width:0}
+.projsum b{display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.projsum small{display:block; color:var(--muted); font-size:12.5px; overflow:hidden;
+  text-overflow:ellipsis; white-space:nowrap}
+
+/* running numbers for this period */
+.stats{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; margin:2px 0 0}
+.stats div{background:#f5f6f8; border-radius:9px; padding:9px 10px; min-width:0}
+.stats em{display:block; font-style:normal; font-size:11.5px; color:var(--muted)}
+.stats b{display:block; font-size:15px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.checks div{background:#fffbeb; border:1px solid #fcd34d; color:#78350f; padding:9px 12px;
+  border-radius:9px; font-size:13.5px; margin-top:9px}
+
+/* ============ work + change order groups ============ */
+.grp{border:1px solid var(--rule); border-radius:11px; padding:12px; margin-bottom:12px;
+  background:#fcfcfd; container-type:inline-size}
+.grp-h{display:flex; align-items:baseline; justify-content:space-between; gap:4px 10px;
+  flex-wrap:wrap; margin-bottom:10px}
+.grp-h b{font-size:15px}
+.grp-h small{font-size:12.5px; color:var(--muted)}
+.none{color:var(--muted); font-size:14px; margin:0 0 10px}
+.wrow{display:flex; gap:8px; align-items:flex-start; margin-bottom:9px}
+.wrow textarea{flex:1; min-height:var(--tap); resize:none; overflow:hidden; background:#fff}
+
 .corow{
   display:grid; gap:8px; padding:11px; border:1px solid var(--rule);
-  border-radius:10px; margin-bottom:9px; background:#fcfcfd;
-  grid-template-columns:1fr; align-items:center;
+  border-radius:10px; margin-bottom:9px; background:#fff;
+  grid-template-columns:minmax(0,1fr) 44px; align-items:end;
+  grid-template-areas:"desc desc" "nums nums" "notes kill";
 }
+.corow .c-desc{grid-area:desc} .corow .nums{grid-area:nums}
+.corow .c-notes{grid-area:notes} .corow .kill{grid-area:kill}
 .corow .nums{display:grid; grid-template-columns:1fr 1fr; gap:8px}
 .corow label{display:block}
 .corow label span{display:block; font-size:11.5px; color:var(--muted); margin-bottom:3px}
-.corow .kill{justify-self:end}
+.corow .kill{height:var(--tap)}
 .cohead{display:none}
-@container (min-width:640px){
-  .corow{grid-template-columns:minmax(0,1fr) minmax(0,200px) minmax(0,130px) 46px; gap:10px; padding:9px 10px}
+@container (min-width:620px){
+  .corow{grid-template-columns:minmax(0,1fr) minmax(0,200px) minmax(0,130px) 44px; gap:10px; padding:8px 9px;
+    grid-template-areas:"desc nums notes kill"; align-items:center}
   .corow label span{display:none}
-  .corow .kill{justify-self:center}
-  .cohead{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,200px) minmax(0,130px) 46px;
-    gap:10px; padding:0 10px 6px; font-size:12px; color:var(--muted); font-weight:600}
+  .cohead{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,200px) minmax(0,130px) 44px;
+    gap:10px; padding:0 9px 6px; font-size:12px; color:var(--muted); font-weight:600}
   .cohead i{font-style:normal; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
 }
 .kill{
-  width:44px; height:44px; border:1px solid var(--rule); background:#fff; color:var(--muted);
+  width:44px; height:44px; flex:none; border:1px solid var(--rule); background:#fff; color:var(--muted);
   border-radius:9px; font-size:22px; line-height:1; cursor:pointer;
 }
 .kill:active{background:#fdeaea; border-color:var(--danger); color:var(--danger)}
 .corun{display:flex; justify-content:space-between; align-items:center; gap:12px;
-  margin-top:12px; padding-top:12px; border-top:1px solid var(--rule)}
-.corun b{font-size:19px}
+  margin-top:4px; padding-top:10px; border-top:1px solid var(--rule)}
+.corun b{font-size:18px}
 
 /* ============ buttons ============ */
 .btn{
@@ -137,11 +170,14 @@ input:focus,select:focus,textarea:focus{border-color:var(--steel); box-shadow:0 
 .btn.primary{background:var(--steel); border-color:var(--steel); color:#fff; font-weight:600}
 .btn.primary:active{background:var(--steel-dark)}
 .btn.wide{width:100%; display:block; margin-bottom:9px}
-.btn.ghost{background:transparent; border-style:dashed; color:var(--steel)}
+.btn.ghost{background:transparent; border-style:dashed; color:var(--steel); font-weight:600}
+.btn.sm{min-height:40px; padding:8px 13px; font-size:14px}
+.btn.danger{color:var(--danger)}
 .btn:focus-visible,.kill:focus-visible,.tabbar button:focus-visible,.wide-nav button:focus-visible{
   outline:3px solid rgba(44,82,130,.5); outline-offset:2px}
 .btnrow{display:flex; gap:9px; flex-wrap:wrap}
 .btnrow .btn{flex:1; min-width:132px}
+.grp > .btn.ghost{width:100%}
 
 /* ============ action bar + tab bar ============ */
 .actionbar{
@@ -153,7 +189,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--steel); box-shadow:0 
 .actionbar .in{max-width:1500px; margin:0 auto; display:flex; align-items:center; gap:10px}
 .due{margin-right:auto; min-width:0}
 .due em{display:block; font-style:normal; font-size:11.5px; color:var(--muted)}
-.due strong{display:block; font-size:23px; letter-spacing:-.01em; line-height:1.15}
+.due strong{display:block; font-size:23px; letter-spacing:-.01em; line-height:1.15; white-space:nowrap}
 .actionbar .btn{padding:10px 15px}
 @media(max-width:390px){ .due strong{font-size:20px} .actionbar .btn{padding:10px 12px} }
 
@@ -172,80 +208,118 @@ input:focus,select:focus,textarea:focus{border-color:var(--steel); box-shadow:0 
   stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round}
 .tabbar button.on{color:var(--steel); font-weight:600}
 
-/* ============ invoice preview ============ */
-.sheet{
-  background:#fff; border:1px solid var(--rule); border-radius:12px; overflow:hidden;
-  box-shadow:0 2px 12px rgba(31,41,55,.08); font-size:12.5px; line-height:1.4;
-}
+/* ============ the invoice itself (preview + print) ============ */
 #panePreview{container-type:inline-size}
-.sheet .title{background:var(--ink); color:#fff; text-align:center; font-size:21px;
-  font-weight:700; padding:12px; letter-spacing:.05em}
-.sheet .bar{background:var(--slate); color:#fff; font-weight:700; font-size:11px;
-  padding:7px 12px; letter-spacing:.07em}
-.sheet .meta{display:grid; grid-template-columns:1fr 1fr; background:var(--panel)}
-.sheet .meta .left{padding:11px 12px; border-right:1px solid var(--rule); white-space:pre-line}
-.sheet .meta .left b{font-size:13.5px}
-.sheet .meta .right{padding:7px 12px}
-.sheet .meta .right div{display:flex; justify-content:space-between; gap:8px; padding:2px 0}
-.sheet .meta .right span{color:#4b5563}
-.sheet .party{display:grid; grid-template-columns:1fr 1fr; background:var(--panel);
-  border-bottom:1px solid var(--rule)}
-.sheet .party > div{padding:11px 12px; white-space:pre-line; min-height:64px}
-.sheet .party > div:first-child{border-right:1px solid var(--rule)}
-.sheet .party .lbl{color:#4b5563}
-.sheet table{width:100%; border-collapse:collapse}
-.sheet th{background:var(--panel); font-size:11px; padding:6px 7px;
-  border:1px solid var(--rule); text-align:center}
-.sheet td{border:1px solid var(--rule); padding:5px 7px; vertical-align:top}
-.sheet td.r{text-align:right; white-space:nowrap}
-.sheet tr.tot td{background:var(--panel); font-weight:700}
-.sheet .sum td{padding:6px 10px}
-.sheet .sum tr.due td{background:var(--amber); font-weight:700; color:var(--amber-ink)}
-.sheet .sum td.inp{background:var(--tint)}
-.sheet .grand{display:flex; justify-content:space-between; align-items:center; gap:10px;
-  background:var(--mint); font-weight:700; font-size:15px; padding:11px 12px;
-  border-top:2px solid var(--ink); border-bottom:2px solid var(--ink); margin-top:14px}
-.sheet .notes{padding:10px 12px; color:#374151; min-height:42px; white-space:pre-line;
-  border-top:1px solid var(--rule); font-size:11.5px}
-.sheet .pad{padding:0 12px 12px}
-@container (max-width:430px){
+.sheet{
+  background:#fff; color:#1f2937; border:1px solid var(--rule); border-radius:10px; overflow:hidden;
+  box-shadow:0 2px 14px rgba(31,41,55,.08); font-size:12px; line-height:1.45;
+  -webkit-print-color-adjust:exact; print-color-adjust:exact;
+}
+.s-strip{height:6px; background:var(--accent)}
+.s-in{padding:22px 24px 26px}
+.s-head{display:flex; justify-content:space-between; align-items:flex-start; gap:16px 24px; flex-wrap:wrap}
+.s-from{min-width:0; flex:1 1 200px}
+.s-logo{display:block; max-width:100%; height:auto; margin-bottom:10px}
+.s-coname{font-size:19px; font-weight:700; line-height:1.2; margin-bottom:6px}
+.s-coname.sm{font-size:13px; margin-bottom:1px}
+.s-addr{color:#4b5563; white-space:pre-line}
+.s-title{flex:0 0 auto; text-align:right; margin-left:auto}
+.s-title h1{margin:0 -.16em 12px 0; font-size:28px; line-height:1; letter-spacing:.16em;
+  color:var(--accent); font-weight:700}
+.s-meta{display:grid; grid-template-columns:auto auto; gap:3px 16px; margin:0; justify-content:end}
+.s-meta dt{color:var(--muted); text-align:right}
+.s-meta dd{margin:0; font-weight:600; text-align:right; font-variant-numeric:tabular-nums}
+.s-label{font-size:10px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--accent);
+  border-bottom:2px solid var(--accent); padding:0 0 4px; margin:0 0 8px}
+.s-parties{display:grid; grid-template-columns:1fr 1fr; gap:24px; margin-top:24px}
+.s-parties p{margin:0; white-space:pre-line}
+.s-sec{margin-top:24px}
+.s-work{list-style:none; margin:0; padding:0}
+.s-work li{padding:7px 2px; border-bottom:1px solid var(--rule-soft); white-space:pre-line}
+.s-co{width:100%; border-collapse:collapse}
+.s-co th{font-size:10px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.05em;
+  text-align:left; background:#f3f5f8; padding:6px 8px}
+.s-co th.r,.s-co td.r{text-align:right; white-space:nowrap; font-variant-numeric:tabular-nums}
+.s-co td{padding:7px 8px; border-bottom:1px solid var(--rule-soft); vertical-align:top}
+.s-co td.d{white-space:pre-line}
+.s-co td.nc{color:var(--muted); font-size:11px}
+.s-co .ni{display:none; color:var(--muted); font-size:10.5px; margin-top:2px}
+.s-co tr.tot td{border-top:1.5px solid var(--ink); border-bottom:0; font-weight:700}
+.s-bottom{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.5fr); gap:28px; margin-top:24px; align-items:start}
+.s-sum td:first-child{white-space:nowrap}
+@container (max-width:640px){
+  .s-bottom{grid-template-columns:1fr; gap:18px}
+  .s-notes{order:2}
+  .s-sum td:first-child{white-space:normal}
+}
+.s-notes p{margin:0; white-space:pre-line; color:#374151; font-size:11.5px}
+.s-sum table{width:100%; border-collapse:collapse}
+.s-sum td{padding:5px 8px; border-bottom:1px solid var(--rule-soft)}
+.s-sum td.r{text-align:right; white-space:nowrap; font-variant-numeric:tabular-nums}
+.s-sum tr.sub td{font-weight:700}
+.s-sum tr.due td{background:var(--accent-tint); color:var(--accent); font-weight:700}
+.s-sum tr.muted td{color:var(--muted)}
+.s-total{display:flex; justify-content:space-between; align-items:center; gap:12px; margin-top:10px;
+  background:var(--accent); color:#fff; padding:11px 12px; border-radius:4px; font-weight:700;
+  font-size:11.5px; letter-spacing:.06em}
+.s-total b{font-size:18px; letter-spacing:0; font-variant-numeric:tabular-nums; white-space:nowrap}
+.sheet .neg{color:#b91c1c}
+@container (max-width:520px){
   .sheet{font-size:11px}
-  .sheet .meta,.sheet .party{grid-template-columns:1fr}
-  .sheet .meta .left,.sheet .party > div:first-child{border-right:0; border-bottom:1px solid var(--rule)}
-  .sheet th,.sheet td{padding:4px 5px}
+  .s-in{padding:16px 14px 18px}
+  .s-title h1{font-size:22px}
+  .s-parties{grid-template-columns:1fr; gap:18px}
+  .s-co th.nc,.s-co td.nc{display:none}
+  .s-co .ni{display:block}
+  .s-co th,.s-co td{padding:6px 5px}
+  .s-total b{font-size:16px}
 }
 
 /* ============ lists ============ */
-.rowitem{display:flex; gap:12px; align-items:center; padding:13px 0;
+.rowitem{display:flex; gap:10px; align-items:center; padding:13px 0;
   border-top:1px solid var(--rule); flex-wrap:wrap}
 .rowitem:first-of-type{border-top:none}
-.rowitem .main{flex:1; min-width:160px}
+.rowitem .main{flex:1; min-width:170px}
 .rowitem .main b{display:block}
 .rowitem .main small{color:var(--muted); font-size:12.5px}
-.rowitem .btn{padding:9px 13px; min-height:40px}
+.rowitem .btn{padding:8px 13px; min-height:40px; font-size:14px}
+.chip{display:inline-block; font-size:11px; font-weight:600; padding:1px 7px; border-radius:20px;
+  background:#e5e7eb; color:#4b5563; margin-left:6px; vertical-align:1px}
+.chip.sent{background:#d1fae5; color:#065f46}
 .empty{color:var(--muted); padding:26px 4px; text-align:center}
 .warn{background:#fffbeb; border:1px solid #fcd34d; color:#78350f; padding:11px 13px;
   border-radius:10px; font-size:13.5px; margin-bottom:12px}
+.logobox{display:grid; place-items:center; min-height:112px; border:1px dashed var(--rule); border-radius:10px;
+  background:#fafbfc; padding:14px; margin-bottom:12px; color:var(--muted); font-size:14px; text-align:center}
+.logobox img{max-width:100%; max-height:90px}
+.check{display:flex; align-items:center; gap:10px; margin:12px 0 4px; font-size:15px}
+.check input{width:24px; height:24px; min-height:0; accent-color:var(--steel); flex:none}
+.saved-ok{color:#047857; font-size:12.5px; font-weight:600}
+
 .toast{
   position:fixed; left:50%; transform:translateX(-50%);
-  bottom:calc(var(--bar) + var(--tabs) + 14px); z-index:60; max-width:88vw; text-align:center;
+  bottom:calc(var(--bar) + var(--tabs) + 14px); z-index:60; max-width:92vw;
+  display:flex; align-items:center; gap:16px;
   background:var(--ink); color:#fff; padding:11px 18px; border-radius:10px; font-size:14px;
   box-shadow:0 6px 20px rgba(0,0,0,.28); opacity:0; pointer-events:none; transition:opacity .18s;
 }
 .toast.show{opacity:1}
+.toast.show.act{pointer-events:auto}
 .toast.bad{background:var(--danger)}
+.toast button{background:transparent; border:0; color:#93c5fd; font-weight:700; font-size:14px;
+  padding:6px 2px; cursor:pointer; flex:none}
 @media(prefers-reduced-motion:reduce){ .toast{transition:none} }
 
 /* ============ wide: iPad landscape & desktop ============ */
-@media(min-width:1180px){
+@media(min-width:1020px){
   :root{--tabs:0px}
   .wide-nav{display:flex}
   .tabbar{display:none}
-  .panes{display:grid; grid-template-columns:minmax(430px,1fr) minmax(360px,560px); gap:20px;
+  .panes{display:grid; grid-template-columns:minmax(420px,1fr) minmax(400px,660px); gap:20px;
     align-items:start; padding-bottom:calc(var(--bar) + 18px)}
   body.v-invoice #panePreview,body.v-preview #paneInvoice{display:block}
   body.v-invoice #panePreview,body.v-preview #panePreview{position:sticky; top:88px}
-  body.v-projects .panes,body.v-settings .panes,body.v-saved .panes{display:block}
+  body.v-projects .panes,body.v-settings .panes,body.v-saved .panes{display:block; max-width:900px}
 }
 
 /* ============ print ============ */
@@ -253,10 +327,11 @@ input:focus,select:focus,textarea:focus{border-color:var(--steel); box-shadow:0 
   .appbar,.actionbar,.tabbar,.toast,#paneInvoice,#paneProjects,#paneSettings,#paneSaved{
     display:none !important}
   body{background:#fff}
-  .panes{padding:0; display:block; max-width:none}
+  .panes{padding:0 !important; display:block !important; max-width:none}
   #panePreview{display:block !important; position:static !important}
   .sheet{border:0; box-shadow:none; border-radius:0; font-size:11px}
-  @page{margin:.45in}
+  .s-in{padding:18px 2px 0}
+  @page{size:letter; margin:.45in}
 }
 </style>
 </head>
@@ -287,15 +362,29 @@ input:focus,select:focus,textarea:focus{border-color:var(--steel); box-shadow:0 
       <h2 data-n="1">Project and customer</h2>
       <div class="body">
         <label class="field"><span>Project</span><select id="projPick"></select></label>
-        <div class="g2">
-          <label class="field"><span>Project name</span><input type="text" id="pName" placeholder="NWPF"></label>
-          <label class="field"><span>Customer PO / job #</span><input type="text" id="pPo" placeholder="optional"></label>
+
+        <div class="projsum" id="projSum" hidden>
+          <div class="m"><b id="psName"></b><small id="psLine"></small></div>
+          <button class="btn sm" type="button" id="btnProjToggle">Edit details</button>
         </div>
-        <label class="field"><span>Job site address</span><input type="text" id="pAddr" placeholder="optional"></label>
-        <label class="field"><span>Bill to</span><textarea id="pBill" placeholder="Irwin Steel LLC"></textarea></label>
-        <label class="field"><span>Customer email</span>
-          <input type="email" id="pEmail" inputmode="email" autocapitalize="off" autocorrect="off" placeholder="ap@customer.com"></label>
-        <p class="hint">Changes here save back to the project automatically.</p>
+
+        <div id="projFields">
+          <div class="g2">
+            <label class="field"><span>Project name</span><input type="text" id="pName" placeholder="NWPF"></label>
+            <label class="field"><span>Customer PO / job #</span><input type="text" id="pPo" placeholder="optional"></label>
+          </div>
+          <label class="field"><span>Job site address</span><input type="text" id="pAddr" placeholder="optional"></label>
+          <label class="field"><span>Bill to</span><textarea id="pBill" placeholder="Irwin Steel LLC&#10;Street address&#10;City, State ZIP"></textarea></label>
+          <label class="field"><span>Customer email</span>
+            <input type="email" id="pEmail" inputmode="email" autocapitalize="off" autocorrect="off" placeholder="ap@customer.com"></label>
+          <div class="g2">
+            <label class="field"><span>Original purchase order</span>
+              <input type="text" id="origPO" class="num" inputmode="decimal" placeholder="219,000"></label>
+            <label class="field"><span>Retainage rate (%)</span>
+              <input type="text" id="retRate" class="num" inputmode="decimal" placeholder="0"></label>
+          </div>
+          <p class="hint" style="margin-top:-4px">These details are stored with the project when you save or send the invoice.</p>
+        </div>
       </div>
     </section>
 
@@ -313,29 +402,41 @@ input:focus,select:focus,textarea:focus{border-color:var(--steel); box-shadow:0 
         <div class="field"><span>Percent of project completed</span>
           <div class="pctwrap">
             <input type="range" id="pctRange" min="0" max="100" step="0.5" aria-label="Percent complete">
-            <input type="text" id="pct" class="num box" inputmode="decimal">
+            <input type="text" id="pct" class="num box" inputmode="decimal" aria-label="Percent complete">
           </div>
-        </div>
-        <div class="g2">
-          <label class="field"><span>Original purchase order</span>
-            <input type="text" id="origPO" class="num" inputmode="decimal" placeholder="219,000"></label>
-          <label class="field"><span>Retainage rate (%)</span>
-            <input type="text" id="retRate" class="num" inputmode="decimal" placeholder="0"></label>
+          <p class="hint" id="pctHint"></p>
         </div>
         <label class="field"><span>Less previous payment requests</span>
           <input type="text" id="prevPay" class="num" inputmode="decimal"></label>
-        <p class="hint" id="prevHint"></p>
+        <p class="hint" id="prevHint" style="margin:-8px 0 14px"></p>
+        <div class="stats">
+          <div><em>Billed to date</em><b class="num" id="stDate">$0</b></div>
+          <div><em>This period</em><b class="num" id="stPeriod">$0</b></div>
+          <div><em>Retainage held</em><b class="num" id="stRet">$0</b></div>
+        </div>
+        <div class="checks" id="checks"></div>
       </div>
     </section>
 
     <section class="step">
-      <h2 data-n="3">Change orders</h2>
+      <h2 data-n="3">Work and change orders</h2>
       <div class="body">
-        <div class="cohead"><i>Change order / description</i><i>Amount &nbsp; / &nbsp; Billable</i><i>Notes</i><i></i></div>
-        <div id="coBody"></div>
-        <button class="btn ghost wide" id="addCo">+ Add change order</button>
-        <div class="corun"><span>Approved change orders</span><b class="num" id="coSum">$0</b></div>
-        <p class="hint">These stay on the project and carry to every future invoice.</p>
+        <p class="hint" style="margin:0 0 12px">Add a description of the work, a change order, or both. Work descriptions print above change orders.</p>
+
+        <div class="grp">
+          <div class="grp-h"><b>Work performed</b><small>Text only — doesn't change the totals</small></div>
+          <div id="workBody"></div>
+          <button class="btn ghost" type="button" id="addWork">+ Add work description</button>
+        </div>
+
+        <div class="grp">
+          <div class="grp-h"><b>Change orders</b><small>Billable amounts add to the purchase order</small></div>
+          <div class="cohead" id="coHead"><i>Change order / description</i><i>Amount &nbsp;/&nbsp; Billable</i><i>Notes</i><i></i></div>
+          <div id="coBody"></div>
+          <button class="btn ghost" type="button" id="addCo">+ Add change order</button>
+          <div class="corun"><span>Approved change orders</span><b class="num" id="coSum">$0</b></div>
+        </div>
+        <p class="hint" style="margin:0">Both lists carry over to the next invoice on this project, so you only update what changed.</p>
       </div>
     </section>
 
@@ -344,10 +445,10 @@ input:focus,select:focus,textarea:focus{border-color:var(--steel); box-shadow:0 
       <div class="body">
         <label class="field"><span>Printed at the bottom of the invoice</span><textarea id="iNotes"></textarea></label>
         <div class="btnrow">
-          <button class="btn" id="btnSave">Save invoice</button>
-          <button class="btn" id="btnEmail">Email draft</button>
-          <button class="btn" id="btnPrint">Print</button>
-          <button class="btn" id="btnNew">Start blank</button>
+          <button class="btn" type="button" id="btnSave">Save invoice</button>
+          <button class="btn" type="button" id="btnEmail">Email draft</button>
+          <button class="btn" type="button" id="btnPrint">Print / PDF</button>
+          <button class="btn" type="button" id="btnNew">Start blank</button>
         </div>
       </div>
     </section>
@@ -365,9 +466,9 @@ input:focus,select:focus,textarea:focus{border-color:var(--steel); box-shadow:0 
 <div class="actionbar">
   <div class="in">
     <div class="due"><em>Amount due</em><strong class="num" id="dueBig">$0.00</strong></div>
-    <button class="btn" id="btnFile">Save file</button>
-    <button class="btn primary" id="btnShare">
-      <svg viewBox="0 0 24 24" aria-hidden="true" style="width:17px;height:17px;vertical-align:-3px;margin-right:6px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round"><path d="M12 15V3M12 3 8.5 6.5M12 3l3.5 3.5"/><path d="M5 12v7a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-7"/></svg>Share</button>
+    <button class="btn" type="button" id="btnFile">Save file</button>
+    <button class="btn primary" type="button" id="btnShare">
+      <svg viewBox="0 0 24 24" aria-hidden="true" style="width:17px;height:17px;vertical-align:-3px;margin-right:6px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round"><path d="M12 15V3M12 3 8.5 6.5M12 3l3.5 3.5"/><path d="M5 12v7a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-7"/></svg>Send</button>
   </div>
 </div>
 
@@ -379,7 +480,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--steel); box-shadow:0 
   <button data-v="settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>Settings</button>
 </nav>
 
-<div class="toast" id="toast"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script>
 /* =========================================================================
@@ -409,19 +510,24 @@ const Store = (() => {
     }
   };
 })();
-const K_CO='inv:company', K_PROJ='inv:projects', K_HIST='inv:invoices';
+const K_CO='inv:company', K_PROJ='inv:projects', K_HIST='inv:invoices',
+      K_LOGO='inv:logo', K_DRAFT='inv:draft';
 
 /* =========================================================================
    2. STATE
    ========================================================================= */
 let company = {
   name:'A STEEL ERECTOR', street:'2121 Avenue C', cityline:'Grand Prairie, TX 75051',
-  phone:'214-554-8532', email:'', fromName:'', showCents:true,
+  phone:'214-554-8532', email:'', fromName:'', showCents:true, hideName:false,
   defaultNotes:'Payment terms: Net 30. Make checks payable to A Steel Erector, 2121 Avenue C, Grand Prairie, TX 75051.'
 };
+let logo = null;                 // { src: dataURL, w, h }
 let projects = [], history = [], cur = null, editingId = null;
+let dirty = false;               // edits since the last save
+let projOpen = true;             // project details expanded?
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
 const $ = id => document.getElementById(id);
+const clone = o => JSON.parse(JSON.stringify(o));
 
 /* =========================================================================
    3. HELPERS
@@ -438,6 +544,7 @@ function money(v, cents){
     { minimumFractionDigits: c?2:0, maximumFractionDigits: c?2:0 });
 }
 const money0 = v => money(v, false);
+const pctText = v => n(v).toLocaleString('en-US',{minimumFractionDigits:1, maximumFractionDigits:2}) + '%';
 const isoOf = d => [d.getFullYear(), String(d.getMonth()+1).padStart(2,'0'),
   String(d.getDate()).padStart(2,'0')].join('-');
 const todayISO = () => isoOf(new Date());
@@ -446,6 +553,11 @@ function isoToDate(iso){
   const p = String(iso||'').split('-');
   return p.length === 3 ? new Date(+p[0], +p[1]-1, +p[2]) : null;
 }
+/* Excel stores dates as UTC day numbers; a UTC midnight shows the right day in any time zone. */
+function isoToExcelDate(iso){
+  const p = String(iso||'').split('-');
+  return p.length === 3 ? new Date(Date.UTC(+p[0], +p[1]-1, +p[2])) : null;
+}
 function fmtDate(iso){
   const d = isoToDate(iso);
   return d ? [String(d.getMonth()+1).padStart(2,'0'), String(d.getDate()).padStart(2,'0'),
@@ -453,9 +565,24 @@ function fmtDate(iso){
 }
 const esc = s => String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
   .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const txt = s => String(s==null?'':s).trim();
+
+const blankCO   = () => ({desc:'',amount:'',billable:'',notes:''});
+const blankWork = () => ({desc:''});
+/* A change order prints when it has a description or an amount (same rule as before). */
+const coShows   = c => !!(txt(c.desc) || n(c.amount) || n(c.billable));
+const coKeep    = c => coShows(c) || !!txt(c.notes);
+const workShows = w => !!txt(w && w.desc);
+
+/* Logo is drawn no larger than this box, in pixels, on the invoice and in Excel. */
+function logoFit(){
+  if (!logo) return null;
+  const s = Math.min(1, 230/logo.w, 70/logo.h);
+  return { w: Math.round(logo.w*s), h: Math.round(logo.h*s) };
+}
 
 /* =========================================================================
-   4. THE MATH — mirrored exactly by the Excel formulas
+   4. THE MATH — mirrored exactly by the Excel formulas (unchanged)
    ========================================================================= */
 function calc(inv){
   const approvedCO  = (inv.changeOrders||[]).reduce((s,c)=> s + n(c.billable), 0);
@@ -469,10 +596,11 @@ function calc(inv){
 }
 
 /* =========================================================================
-   5. EXCEL GENERATOR (verified against the original workbook)
+   5. EXCEL GENERATOR
+   Columns: A margin | B C  left block | D gutter | E F G right block | H margin
    ========================================================================= */
-const INK='FF1F2937', BARC='FF374151', PANEL='FFF3F4F6',
-      TINT='FFE8F0FE', AMBER='FFFEF3C7', MINT='FFD1FAE5', WHITE='FFFFFFFF';
+const X = { INK:'FF1F2937', ACCENT:'FF1F3A5F', MUTED:'FF6B7280', LINE:'FFDDE1E6',
+            HEAD:'FFF1F3F6', DUEBG:'FFEAF0F7', WHITE:'FFFFFFFF', SUB:'FF4B5563' };
 const colNum = s => { let x=0; for(const ch of s) x = x*26 + (ch.charCodeAt(0)-64); return x; };
 
 function buildWorkbook(inv){
@@ -482,88 +610,118 @@ function buildWorkbook(inv){
   const ws = wb.addWorksheet('Invoice', {
     views:[{showGridLines:false}],
     pageSetup:{ orientation:'portrait', fitToPage:true, fitToWidth:1, fitToHeight:0,
-      margins:{left:.4,right:.4,top:.5,bottom:.5,header:.2,footer:.2} }
+      horizontalCentered:true,
+      margins:{left:.4,right:.4,top:.45,bottom:.45,header:.2,footer:.2} }
   });
   const FONT = 'Arial';
   const cents = inv.showCents !== false;
-  const MF  = cents ? '\\$#,##0.00;[Red]\\(\\$#,##0.00\\);"-"' : '\\$#,##0;[Red]\\(\\$#,##0\\);"-"';
-  const MF0 = '\\$#,##0;[Red]\\(\\$#,##0\\);"-"';
+  const MF = cents ? '\\$#,##0.00;[Red]\\(\\$#,##0.00\\);"-"' : '\\$#,##0;[Red]\\(\\$#,##0\\);"-"';
+  const PF = '0.0#%';
 
-  ws.columns = [{width:3},{width:27},{width:17},{width:15},{width:19},{width:16},{width:16},{width:3}];
+  ws.columns = [{width:2},{width:28},{width:16},{width:3},{width:24},{width:15},{width:18},{width:2}];
 
   const set = (addr, val, o) => {
     o = o || {};
     const c = ws.getCell(addr);
     if (val !== undefined) c.value = val;
-    c.font = Object.assign({ name:FONT, size:10 }, o.font);
+    c.font = Object.assign({ name:FONT, size:10, color:{argb:X.INK} }, o.font);
     if (o.fill) c.fill = { type:'pattern', pattern:'solid', fgColor:{argb:o.fill} };
     if (o.fmt) c.numFmt = o.fmt;
     c.alignment = Object.assign({ vertical:'middle' }, o.align);
     return c;
   };
-  const box = (range, style) => {
-    style = style || 'thin';
-    const b = { top:{style}, bottom:{style}, left:{style:'thin'}, right:{style:'thin'} };
+  const each = (range, fn) => {
     const m = range.match(/^([A-Z]+)(\d+):([A-Z]+)(\d+)$/);
     for (let r = +m[2]; r <= +m[4]; r++)
-      for (let c = colNum(m[1]); c <= colNum(m[3]); c++) ws.getCell(r,c).border = b;
+      for (let c = colNum(m[1]); c <= colNum(m[3]); c++) fn(ws.getCell(r,c));
   };
-  const paint = (range, argb) => {
-    const m = range.match(/^([A-Z]+)(\d+):([A-Z]+)(\d+)$/);
-    for (let r = +m[2]; r <= +m[4]; r++)
-      for (let c = colNum(m[1]); c <= colNum(m[3]); c++)
-        ws.getCell(r,c).fill = { type:'pattern', pattern:'solid', fgColor:{argb} };
-  };
-  const bar = (range, text) => {
-    ws.mergeCells(range);
-    set(range.split(':')[0], text, { font:{bold:true,size:11,color:{argb:'FFFFFFFF'}}, fill:BARC,
-      align:{horizontal:'left',indent:1} });
-    ws.getRow(+range.match(/(\d+)/)[1]).height = 20;
-  };
-  const lines = (t, per) => Math.max(1, Math.ceil((t||'').length / per));
-
-  ws.mergeCells('B1:G1');
-  set('B1','INVOICE',{ font:{bold:true,size:18,color:{argb:'FFFFFFFF'}}, fill:INK, align:{horizontal:'center'} });
-  ws.getRow(1).height = 34;
-
-  ws.mergeCells('B2:D5');
-  const co = inv.company;
-  const rt = [{ text:(co.name||'')+'\n', font:{name:FONT,size:11,bold:true,color:{argb:'FF1F2937'}} }];
-  [co.street, co.cityline, co.phone, co.email].filter(Boolean).forEach((l,i,a)=>{
-    rt.push({ text:l + (i<a.length-1?'\n':''), font:{name:FONT,size:10,color:{argb:'FF1F2937'}} });
+  const paint = (range, argb) => each(range, c => { c.fill = { type:'pattern', pattern:'solid', fgColor:{argb} }; });
+  const edge  = (range, side, style, argb) => each(range, c => {
+    c.border = Object.assign({}, c.border, { [side]: { style, color:{argb} } });
   });
-  set('B2',{richText:rt},{ fill:PANEL, align:{horizontal:'left',vertical:'top',wrapText:true,indent:1} });
-  paint('B2:D5', PANEL);
-  ws.getRow(2).height = 22;
+  const merge = range => ws.mergeCells(range);
+  const hgt = (r, h) => { ws.getRow(r).height = h; };
+  const linesOf = (t, per) => String(t||'').split('\n')
+    .reduce((s,l)=> s + Math.max(1, Math.ceil(l.length / per)), 0);
+  const label = (range, text) => {
+    merge(range);
+    set(range.split(':')[0], text, { font:{bold:true, size:9, color:{argb:X.ACCENT}},
+      align:{horizontal:'left', vertical:'bottom', indent:1} });
+    edge(range, 'bottom', 'medium', X.ACCENT);
+    hgt(+range.match(/(\d+)/)[1], 20);
+  };
+  const asNum = v => /^\s*\d+\s*$/.test(String(v==null?'':v)) ? parseInt(v,10) : (v==null?'':v);
 
-  [['Date:',inv.date,'d'],['Invoice #:',inv.invoiceNo],
-   ['Payment Request #:',inv.paymentRequestNo],['Period Ending:',inv.periodEnding,'d']]
-  .forEach(([label,val,kind],i)=>{
-    const r = 2+i;
-    set('E'+r, label, { fill:PANEL, align:{horizontal:'left',indent:1} });
-    ws.mergeCells('F'+r+':G'+r);
-    set('F'+r, val, { fill:PANEL, fmt: kind==='d' ? 'mm/dd/yyyy' : undefined,
-      align:{horizontal:'left',indent:1} });
+  const co = inv.company, lg = inv.logo;
+  const showName = !(lg && co.hideName);
+
+  /* ---- header ---------------------------------------------------------- */
+  paint('B1:G1', X.ACCENT); hgt(1, 5);
+  hgt(2, 8);
+  let band = 34;
+  if (lg){
+    const s = Math.min(1, 230/lg.w, 70/lg.h);
+    const w = Math.round(lg.w*s), h = Math.round(lg.h*s);
+    band = Math.max(34, h*0.75 + 12);
+    const id = wb.addImage({ base64: lg.src, extension: /image\/jpe?g/.test(lg.src) ? 'jpeg' : 'png' });
+    ws.addImage(id, { tl:{ col:1, row:2 }, ext:{ width:w, height:h }, editAs:'oneCell' });
+  } else {
+    merge('B3:C4');
+    set('B3', co.name || '', { font:{bold:true, size:16}, align:{horizontal:'left', vertical:'bottom', indent:1} });
+  }
+  hgt(3, band/2); hgt(4, band/2);
+  merge('E3:G4');
+  set('E3', 'INVOICE', { font:{bold:true, size:22, color:{argb:X.ACCENT}},
+    align:{horizontal:'right', vertical:'bottom', indent:1} });
+
+  merge('B5:C8');
+  const rt = [];
+  const addrLines = [co.street, co.cityline, co.phone, co.email].filter(Boolean);
+  if (lg && showName && co.name)
+    rt.push({ text: co.name + (addrLines.length ? '\n' : ''), font:{name:FONT,size:10,bold:true,color:{argb:X.INK}} });
+  addrLines.forEach((l,i,a)=> rt.push({ text: l + (i<a.length-1?'\n':''), font:{name:FONT,size:10,color:{argb:X.SUB}} }));
+  set('B5', rt.length ? { richText: rt } : '', { align:{horizontal:'left', vertical:'top', wrapText:true, indent:1} });
+
+  [['Invoice #', asNum(inv.invoiceNo)], ['Invoice Date', inv.date, 'd'],
+   ['Payment Request #', asNum(inv.paymentRequestNo)], ['Period Ending', inv.periodEnding, 'd']]
+  .forEach(([lab,val,kind],i)=>{
+    const r = 5+i;
+    set('E'+r, lab, { font:{color:{argb:X.MUTED}}, align:{horizontal:'right', indent:1} });
+    merge('F'+r+':G'+r);
+    set('F'+r, val, { font:{bold:true}, fmt: kind==='d' ? 'mm/dd/yyyy' : undefined,
+      align:{horizontal:'right', indent:1} });
   });
-  paint('E2:G5', PANEL); box('B2:G5');
+  for (let r=5; r<=8; r++) hgt(r, 16.5);
+  hgt(9, 14);
 
-  bar('B6:G6','PROJECT & BILL TO');
-  ws.mergeCells('B7:D11');
-  set('B7','Project:  ' + (inv.project.name||'') +
-      (inv.project.address ? '\n' + inv.project.address : '') +
-      (inv.project.po ? '\nPO #: ' + inv.project.po : ''),
-    { font:{size:11}, fill:PANEL, align:{horizontal:'left',vertical:'top',wrapText:true,indent:1} });
-  ws.mergeCells('E7:G11');
-  set('E7','Bill To:  ' + (inv.billTo||''),
-    { font:{size:11}, fill:PANEL, align:{horizontal:'left',vertical:'top',wrapText:true,indent:1} });
-  paint('B7:G11', PANEL); box('B7:G11');
-  for (let r=7; r<=11; r++) ws.getRow(r).height = 17;
+  /* ---- bill to / project ---------------------------------------------- */
+  label('B10:C10', 'BILL TO');
+  label('E10:G10', 'PROJECT');
+  hgt(11, 5);
+  const bill = txt(inv.billTo);
+  const billLines = bill ? bill.split('\n') : [];
+  merge('B12:C15');
+  set('B12', billLines.length ? { richText: [
+      { text: billLines[0] + (billLines.length>1 ? '\n' : ''), font:{name:FONT,size:10,bold:true,color:{argb:X.INK}} },
+      ...(billLines.length>1 ? [{ text: billLines.slice(1).join('\n'), font:{name:FONT,size:10,color:{argb:X.INK}} }] : [])
+    ] } : '', { align:{horizontal:'left', vertical:'top', wrapText:true, indent:1} });
+  const pj = inv.project;
+  const pjRest = [pj.address, pj.po ? 'PO / Job #: ' + pj.po : ''].filter(Boolean).join('\n');
+  merge('E12:G15');
+  set('E12', { richText: [
+      { text: (pj.name||'') + (pjRest ? '\n' : ''), font:{name:FONT,size:10,bold:true,color:{argb:X.INK}} },
+      ...(pjRest ? [{ text: pjRest, font:{name:FONT,size:10,color:{argb:X.INK}} }] : [])
+    ] }, { align:{horizontal:'left', vertical:'top', wrapText:true, indent:1} });
+  const partyLines = Math.max(linesOf(bill, 46), linesOf((pj.name||'') + (pjRest ? '\n'+pjRest : ''), 60));
+  const partyH = Math.max(15, (partyLines*13 + 8) / 4);
+  for (let r=12; r<=15; r++) hgt(r, partyH);
+  hgt(16, 16);
 
-  const cos = (inv.changeOrders||[]).filter(c => (c.desc && c.desc.trim()) || n(c.amount) || n(c.billable));
-
-  /* Cached results. Formula cells carry both the formula and its value: Excel
-     recalculates live, while preview windows (iOS Quick Look, Mail, Gmail,
-     Drive) that never recalculate still show numbers instead of blanks. */
+  /* ---- cached results: formula cells carry both the formula and its value,
+     so preview windows that never recalculate (iOS Quick Look, Mail, Gmail,
+     Drive) still show numbers instead of blanks. ------------------------- */
+  const cos   = (inv.changeOrders||[]).filter(coShows);
+  const works = (inv.workItems||[]).filter(workShows);
   const vApprovedCO  = cos.reduce((s,c)=> s + n(c.billable), 0);
   const vOrigPO      = n(inv.originalPO);
   const vTotalPO     = vOrigPO + vApprovedCO;
@@ -576,94 +734,120 @@ function buildWorkbook(inv){
   const vCurrDue     = vGrossPeriod - vLessRet;
   const vRetDate     = vGrossDate * vRet;
 
-  bar('B13:G13','CHANGE ORDERS');
-  const hdr = { font:{bold:true,size:11}, fill:PANEL, align:{horizontal:'center'} };
-  ws.mergeCells('B14:D14');
-  set('B14','Change Order / Description', hdr);
-  set('E14','Amount', hdr); set('F14','Amount Billable', hdr); set('G14','Notes', hdr);
-  paint('B14:G14', PANEL);
+  let r = 17;
 
-  const first = 15;
-  cos.forEach((c,i)=>{
-    const r = first + i;
-    ws.mergeCells('B'+r+':D'+r);
-    set('B'+r, c.desc||'', { font:{size:11}, align:{horizontal:'left',wrapText:true,indent:1} });
-    set('E'+r, n(c.amount),   { font:{size:11}, fmt:MF0, align:{horizontal:'right',indent:1} });
-    set('F'+r, n(c.billable), { font:{size:11}, fmt:MF0, align:{horizontal:'right',indent:1} });
-    set('G'+r, c.notes||'',   { font:{size:10}, align:{horizontal:'left',wrapText:true,indent:1} });
-    ws.getRow(r).height = 15 * Math.max(lines(c.desc,57), lines(c.notes,20));
-  });
-  const last = first + Math.max(cos.length,1) - 1;
-  if (!cos.length){ ws.mergeCells('B'+first+':D'+first); ws.getRow(first).height = 18; }
+  /* ---- work performed (descriptions only, above change orders) -------- */
+  if (works.length){
+    label('B'+r+':G'+r, 'WORK PERFORMED'); r++;
+    works.forEach(w=>{
+      merge('B'+r+':G'+r);
+      set('B'+r, txt(w.desc), { align:{horizontal:'left', vertical:'middle', wrapText:true, indent:1} });
+      edge('B'+r+':G'+r, 'bottom', 'thin', X.LINE);
+      hgt(r, Math.max(19, 7 + 13*linesOf(txt(w.desc), 112)));
+      r++;
+    });
+    hgt(r, 16); r++;
+  }
 
-  const coTotal = last + 1;
-  paint('B'+coTotal+':G'+coTotal, PANEL);
-  ws.mergeCells('B'+coTotal+':E'+coTotal);
-  set('B'+coTotal,'Approved Change Orders (sum billable)',
-    { font:{bold:true,size:11}, fill:PANEL, align:{horizontal:'left',indent:1} });
-  set('F'+coTotal, { formula:'SUM(F'+first+':F'+last+')', result: vApprovedCO },
-    { font:{bold:true,size:11}, fill:PANEL, fmt:MF0, align:{horizontal:'right',indent:1} });
-  box('B14:G'+coTotal);
+  /* ---- change orders --------------------------------------------------- */
+  let coTotal = null;
+  if (cos.length){
+    label('B'+r+':G'+r, 'CHANGE ORDERS'); r++;
+    const hd = { font:{bold:true, size:9, color:{argb:X.MUTED}}, fill:X.HEAD };
+    paint('B'+r+':G'+r, X.HEAD);
+    merge('B'+r+':D'+r);
+    set('B'+r, 'Change Order / Description', Object.assign({ align:{horizontal:'left', indent:1} }, hd));
+    set('E'+r, 'Notes',           Object.assign({ align:{horizontal:'left', indent:1} }, hd));
+    set('F'+r, 'Amount',          Object.assign({ align:{horizontal:'right', indent:1} }, hd));
+    set('G'+r, 'Amount Billable', Object.assign({ align:{horizontal:'right', indent:1} }, hd));
+    hgt(r, 19); r++;
+    const first = r;
+    cos.forEach(c=>{
+      merge('B'+r+':D'+r);
+      set('B'+r, txt(c.desc), { align:{horizontal:'left', wrapText:true, indent:1} });
+      set('E'+r, txt(c.notes), { font:{size:9, color:{argb:X.MUTED}}, align:{horizontal:'left', wrapText:true, indent:1} });
+      set('F'+r, n(c.amount),   { fmt:MF, align:{horizontal:'right', indent:1} });
+      set('G'+r, n(c.billable), { fmt:MF, align:{horizontal:'right', indent:1} });
+      edge('B'+r+':G'+r, 'bottom', 'thin', X.LINE);
+      hgt(r, Math.max(19, 7 + 13*Math.max(linesOf(txt(c.desc),52), linesOf(txt(c.notes),26))));
+      r++;
+    });
+    const last = r - 1;
+    coTotal = r;
+    merge('B'+r+':F'+r);
+    set('B'+r, 'Approved Change Orders (sum billable)', { font:{bold:true}, align:{horizontal:'right', indent:1} });
+    set('G'+r, { formula:'SUM(G'+first+':G'+last+')', result:vApprovedCO },
+      { font:{bold:true}, fmt:MF, align:{horizontal:'right', indent:1} });
+    edge('B'+r+':G'+r, 'top', 'thin', X.INK);
+    hgt(r, 20); r++;
+    hgt(r, 16); r++;
+  }
 
-  const sBar = coTotal + 2;
-  bar('B'+sBar+':G'+sBar, 'SUMMARY');
-  const S = sBar + 1;
+  /* ---- notes (left) + summary (right) ---------------------------------- */
+  label('B'+r+':C'+r, 'NOTES & TERMS');
+  label('E'+r+':G'+r, 'SUMMARY');
+  r++;
+  hgt(r, 5); r++;
+  const S = r;
   const R = { origPO:S, apprCO:S+1, totalPO:S+2, pct:S+3, grossDate:S+4, prevPay:S+5,
               grossPeriod:S+6, retRate:S+7, lessRet:S+8, currDue:S+9, retDate:S+10 };
-  [
-    [R.origPO,'Original Purchase Order Amount', vOrigPO,'input'],
-    [R.apprCO,'Approved Change Orders',{formula:'F'+coTotal, result:vApprovedCO},'calc'],
-    [R.totalPO,'Total Current Purchase Order',{formula:'F'+R.origPO+'+F'+R.apprCO, result:vTotalPO},'calc'],
-    [R.pct,'Percentage of Project Completed', vPct,'pctin'],
-    [R.grossDate,'Gross Amount Due to Date',{formula:'F'+R.totalPO+'*F'+R.pct, result:vGrossDate},'calc'],
-    [R.prevPay,'Less Previous Payment Requests', vPrev,'input'],
-    [R.grossPeriod,'Gross Amount Due this Period',{formula:'F'+R.grossDate+'-F'+R.prevPay, result:vGrossPeriod},'calc'],
-    [R.retRate,'Retainage Rate', vRet,'pctin'],
-    [R.lessRet,'Less Retainage',{formula:'F'+R.grossPeriod+'*F'+R.retRate, result:vLessRet},'calc'],
-    [R.currDue,'Current Amount Due',{formula:'F'+R.grossPeriod+'-F'+R.lessRet, result:vCurrDue},'due'],
-    [R.retDate,'Retainage to Date',{formula:'F'+R.grossDate+'*F'+R.retRate, result:vRetDate},'calc']
-  ].forEach(([r,label,val,kind])=>{
-    const due = kind === 'due';
-    const rowBg = due ? AMBER : WHITE;
-    const valBg = (kind==='input'||kind==='pctin') ? TINT : rowBg;
-    paint('B'+r+':G'+r, rowBg);
-    ws.mergeCells('B'+r+':E'+r);
-    set('B'+r, label, { font:{bold:due,size:11}, fill:rowBg, align:{horizontal:'left',indent:1} });
-    ws.mergeCells('F'+r+':G'+r);
-    set('F'+r, val, { font:{bold:due,size:11}, fill:valBg,
-      fmt: kind==='pctin' ? '0.0%' : MF, align:{horizontal:'right',indent:1} });
-    ws.getRow(r).height = 18;
-  });
-  box('B'+S+':G'+R.retDate);
-
+  const G = k => 'G' + R[k];
   const tRow = R.retDate + 2;
-  paint('B'+tRow+':G'+tRow, MINT);
-  ws.mergeCells('B'+tRow+':E'+tRow);
-  set('B'+tRow,'TOTAL DUE THIS INVOICE', { font:{bold:true,size:12}, fill:MINT,
-    align:{horizontal:'left',indent:1} });
-  ws.mergeCells('F'+tRow+':G'+tRow);
-  set('F'+tRow, { formula:'F'+R.currDue, result:vCurrDue },
-    { font:{bold:true,size:12}, fill:MINT, fmt:MF, align:{horizontal:'right',indent:1} });
-  ws.getRow(tRow).height = 24;
-  box('B'+tRow+':G'+tRow,'medium');
 
-  const nRow = tRow + 2, nEnd = nRow + 2;
-  ws.mergeCells('B'+nRow+':G'+nEnd);
-  set('B'+nRow, inv.notes||'', { font:{size:10},
-    align:{horizontal:'left',vertical:'top',wrapText:true,indent:1} });
-  box('B'+nRow+':G'+nEnd);
-  for (let r=nRow; r<=nEnd; r++) ws.getRow(r).height = 16;
+  const notes = txt(inv.notes);
+  const needH = linesOf(notes, 50) * 12.5 + 8;
+  const rowH  = Math.max(18, (needH - 6 - 26) / 11);
 
-  ws.pageSetup.printArea = 'B1:G' + nEnd;
+  [
+    ['origPO',     'Original Purchase Order Amount',  vOrigPO, ''],
+    ['apprCO',     'Approved Change Orders',
+       coTotal ? { formula:'G'+coTotal, result:vApprovedCO } : vApprovedCO, ''],
+    ['totalPO',    'Total Current Purchase Order',    { formula:G('origPO')+'+'+G('apprCO'), result:vTotalPO }, 'sub'],
+    ['pct',        'Percentage of Project Completed', vPct, 'pct'],
+    ['grossDate',  'Gross Amount Due to Date',        { formula:G('totalPO')+'*'+G('pct'), result:vGrossDate }, ''],
+    ['prevPay',    'Less Previous Payment Requests',  vPrev, ''],
+    ['grossPeriod','Gross Amount Due this Period',    { formula:G('grossDate')+'-'+G('prevPay'), result:vGrossPeriod }, 'sub'],
+    ['retRate',    'Retainage Rate',                  vRet, 'pct'],
+    ['lessRet',    'Less Retainage',                  { formula:G('grossPeriod')+'*'+G('retRate'), result:vLessRet }, ''],
+    ['currDue',    'Current Amount Due',              { formula:G('grossPeriod')+'-'+G('lessRet'), result:vCurrDue }, 'due'],
+    ['retDate',    'Retainage to Date',               { formula:G('grossDate')+'*'+G('retRate'), result:vRetDate }, 'muted']
+  ].forEach(([k,lab,val,kind])=>{
+    const row = R[k];
+    const bold = kind==='sub' || kind==='due';
+    const color = kind==='due' ? X.ACCENT : (kind==='muted' ? X.MUTED : X.INK);
+    if (kind==='due') paint('E'+row+':G'+row, X.DUEBG);
+    merge('E'+row+':F'+row);
+    set('E'+row, lab, { font:{bold, color:{argb:color}}, align:{horizontal:'left', indent:1} });
+    set('G'+row, val, { font:{bold, color:{argb:color}}, fmt: kind==='pct' ? PF : MF,
+      align:{horizontal:'right', indent:1} });
+    edge('E'+row+':G'+row, 'bottom', 'thin', X.LINE);
+    hgt(row, rowH);
+  });
+  hgt(R.retDate + 1, 6);
+
+  paint('E'+tRow+':G'+tRow, X.ACCENT);
+  merge('E'+tRow+':F'+tRow);
+  set('E'+tRow, 'TOTAL DUE THIS INVOICE', { font:{bold:true, size:10, color:{argb:X.WHITE}},
+    align:{horizontal:'left', indent:1} });
+  set('G'+tRow, { formula:G('currDue'), result:vCurrDue },
+    { font:{bold:true, size:12, color:{argb:X.WHITE}}, fmt:MF, align:{horizontal:'right', indent:1} });
+  hgt(tRow, 26);
+
+  merge('B'+S+':C'+tRow);
+  set('B'+S, notes, { font:{size:9.5, color:{argb:X.SUB}},
+    align:{horizontal:'left', vertical:'top', wrapText:true, indent:1} });
+
+  ws.pageSetup.printArea = 'A1:H' + (tRow + 1);
+  hgt(tRow + 1, 8);
   return wb;
 }
 
 const toExcelPayload = inv => ({
-  company, showCents: company.showCents,
-  date: isoToDate(inv.date), periodEnding: isoToDate(inv.periodEnding),
+  company, logo, showCents: company.showCents,
+  date: isoToExcelDate(inv.date), periodEnding: isoToExcelDate(inv.periodEnding),
   invoiceNo: inv.invoiceNo, paymentRequestNo: inv.paymentRequestNo,
   project:{ name:inv.projName, address:inv.projAddr, po:inv.projPo },
-  billTo: inv.billTo, changeOrders: inv.changeOrders,
+  billTo: inv.billTo, changeOrders: inv.changeOrders, workItems: inv.workItems,
   originalPO: inv.originalPO, percentComplete: inv.percentComplete,
   previousPayments: inv.previousPayments, retainageRate: inv.retainageRate,
   notes: inv.notes
@@ -672,7 +856,7 @@ const toExcelPayload = inv => ({
 const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 function fileName(){
   const safe = s => String(s||'').replace(/[^a-z0-9]+/gi,'_').replace(/^_|_$/g,'');
-  return [safe(company.name)||'Invoice', safe(cur.projName), 'Inv'+cur.invoiceNo, cur.periodEnding]
+  return [safe(company.name)||'Invoice', safe(cur.projName), 'Inv'+safe(cur.invoiceNo), cur.periodEnding]
     .filter(Boolean).join('_') + '.xlsx';
 }
 
@@ -711,9 +895,18 @@ const blankInvoice = () => ({
   date: todayISO(), periodEnding: endOfMonthISO(),
   invoiceNo:1, paymentRequestNo:1,
   originalPO:0, percentComplete:0, previousPayments:0, retainageRate:0,
-  changeOrders:[{desc:'',amount:'',billable:'',notes:''}],
+  workItems:[], changeOrders:[],
   notes: company.defaultNotes
 });
+/* Fill in anything an older saved invoice or draft is missing, and drop empty rows. */
+function normalize(inv){
+  const o = Object.assign(blankInvoice(), inv || {});
+  o.changeOrders = (Array.isArray(o.changeOrders) ? o.changeOrders : []).filter(coKeep)
+    .map(c => Object.assign(blankCO(), c));
+  o.workItems = (Array.isArray(o.workItems) ? o.workItems : []).filter(workShows)
+    .map(w => ({ desc: w.desc }));
+  return o;
+}
 function loadProject(p){
   Object.assign(cur, {
     projectId:p.id, projName:p.name, projAddr:p.address||'', projPo:p.po||'',
@@ -721,8 +914,8 @@ function loadProject(p){
     originalPO:p.originalPO||0, retainageRate:p.retainageRate||0,
     previousPayments:p.previousPayments||0, percentComplete:p.lastPercent||0,
     invoiceNo:p.nextInvoiceNo||1, paymentRequestNo:p.nextInvoiceNo||1,
-    changeOrders:(p.changeOrders&&p.changeOrders.length)
-      ? p.changeOrders.map(c=>({...c})) : [{desc:'',amount:'',billable:'',notes:''}],
+    changeOrders:(p.changeOrders||[]).filter(coKeep).map(c=>Object.assign(blankCO(), c)),
+    workItems:(p.workItems||[]).filter(workShows).map(w=>({desc:w.desc})),
     notes:p.notes||company.defaultNotes
   });
 }
@@ -735,7 +928,14 @@ function fillPicker(){
   sel.innerHTML = '<option value="">— Not saved yet —</option>' +
     projects.map(p=>`<option value="${p.id}">${esc(p.name||'Untitled')}</option>`).join('') +
     '<option value="__new">+ Start a new project</option>';
-  sel.value = cur.projectId || '';
+  sel.value = projects.some(p=>p.id===cur.projectId) ? cur.projectId : '';
+}
+function setProjOpen(open){
+  const saved = projects.some(p=>p.id===cur.projectId);
+  projOpen = open || !saved;
+  $('projFields').hidden = !projOpen;
+  $('projSum').hidden = !saved;
+  $('btnProjToggle').textContent = projOpen ? 'Done' : 'Edit details';
 }
 function renderForm(){
   fillPicker();
@@ -748,16 +948,35 @@ function renderForm(){
   $('retRate').value = cur.retainageRate;
   $('prevPay').value = cur.previousPayments ? Number(cur.previousPayments).toLocaleString('en-US') : '';
   $('iNotes').value = cur.notes;
-  renderCoRows();
+  renderWorkRows(); renderCoRows();
+  setProjOpen(false);
   const p = projects.find(x=>x.id===cur.projectId);
   $('prevHint').textContent = p && p.lastInvoiceNo
     ? 'Carried forward from invoice #'+p.lastInvoiceNo+' — everything billed on this project so far.'
     : 'Everything already billed on this project. Fills itself in after each saved invoice.';
 }
+function grow(t){
+  if (!t.offsetParent) return;           // hidden: measure later
+  t.style.height = 'auto';
+  t.style.height = (t.scrollHeight + 2) + 'px';
+}
+const growAll = () => document.querySelectorAll('#workBody textarea').forEach(grow);
+
+function renderWorkRows(){
+  $('workBody').innerHTML = cur.workItems.length ? cur.workItems.map((w,i)=>`
+    <div class="wrow" data-i="${i}">
+      <textarea data-f="desc" rows="2" aria-label="Work description ${i+1}"
+        placeholder="Describe the work done, e.g. Erected structural steel, levels 1–3">${esc(w.desc)}</textarea>
+      <button class="kill" type="button" data-del="${i}" aria-label="Remove work description">&times;</button>
+    </div>`).join('')
+    : '<p class="none">No work descriptions on this invoice.</p>';
+  growAll();
+}
 function renderCoRows(){
-  $('coBody').innerHTML = cur.changeOrders.map((c,i)=>`
+  $('coHead').hidden = !cur.changeOrders.length;
+  $('coBody').innerHTML = cur.changeOrders.length ? cur.changeOrders.map((c,i)=>`
     <div class="corow" data-i="${i}">
-      <label><span>Description</span>
+      <label class="c-desc"><span>Description</span>
         <input type="text" data-f="desc" value="${esc(c.desc)}" placeholder="Description of change order"></label>
       <div class="nums">
         <label><span>Amount</span>
@@ -765,85 +984,162 @@ function renderCoRows(){
         <label><span>Billable</span>
           <input type="text" class="num" data-f="billable" inputmode="decimal" value="${esc(c.billable)}" placeholder="0"></label>
       </div>
-      <label><span>Notes</span>
+      <label class="c-notes"><span>Notes</span>
         <input type="text" data-f="notes" value="${esc(c.notes)}" placeholder="optional"></label>
-      <button class="kill" data-del="${i}" aria-label="Remove change order">&times;</button>
-    </div>`).join('');
+      <button class="kill" type="button" data-del="${i}" aria-label="Remove change order">&times;</button>
+    </div>`).join('')
+    : '<p class="none">No change orders on this invoice.</p>';
 }
 
 /* =========================================================================
-   8. RENDER — totals + live preview
+   8. RENDER — totals, checks + live preview
    ========================================================================= */
-function renderAll(){
-  const c = calc(cur);
-  $('coSum').textContent = money0(c.approvedCO);
-  $('dueBig').textContent = money(c.currentDue);
-  $('hTitle').textContent = cur.projName || 'New invoice';
-  $('hSub').textContent = cur.projName
-    ? 'Invoice #'+cur.invoiceNo+' · period ending '+fmtDate(cur.periodEnding)
-    : 'Pick a project to start';
+function checksFor(c){
+  const out = [];
+  const p = projects.find(x=>x.id===cur.projectId);
+  if (!n(cur.originalPO)) out.push('Enter the original purchase order amount.');
+  if (n(cur.percentComplete) > 100) out.push('Percent complete is over 100%.');
+  if (!editingId && p && p.lastInvoiceNo && n(cur.percentComplete) < n(p.lastPercent))
+    out.push('Percent complete is lower than the last invoice ('+pctText(p.lastPercent)+').');
+  if (c.grossPeriod < -0.004)
+    out.push('This period comes out negative — check percent complete and previous payments.');
+  if (cur.projectId && history.some(h => h.id !== editingId && h.data.projectId === cur.projectId &&
+      txt(h.data.invoiceNo) === txt(cur.invoiceNo)))
+    out.push('Invoice #'+cur.invoiceNo+' is already saved for this project.');
+  return out;
+}
 
-  const coRows = cur.changeOrders
-    .filter(x=>(x.desc&&x.desc.trim())||n(x.amount)||n(x.billable))
-    .map(x=>`<tr><td>${esc(x.desc)}</td><td class="r">${money0(x.amount)}</td>
-      <td class="r">${money0(x.billable)}</td><td>${esc(x.notes)}</td></tr>`).join('')
-    || '<tr><td colspan="4" style="color:#9ca3af">No change orders yet</td></tr>';
+/* Money as the invoice shows it: dash for zero, red parentheses for negatives (same as Excel). */
+function sm(v){
+  const x = n(v);
+  if (Math.abs(x) < 0.005) return '–';
+  return x < 0 ? '<span class="neg">(' + money(-x) + ')</span>' : money(x);
+}
+
+function sheetHTML(c){
+  const co = company;
+  const addr = [co.street, co.cityline, co.phone, co.email].filter(Boolean).map(esc).join('\n');
+  let from = '';
+  if (logo){
+    const f = logoFit();
+    from += `<img class="s-logo" src="${logo.src}" width="${f.w}" height="${f.h}" alt="${esc(co.name)}">`;
+    if (!co.hideName && co.name) from += `<div class="s-coname sm">${esc(co.name)}</div>`;
+  } else if (co.name){
+    from += `<div class="s-coname">${esc(co.name)}</div>`;
+  }
+  from += `<div class="s-addr">${addr}</div>`;
+
+  const bill = txt(cur.billTo).split('\n');
+  const billHTML = bill[0] ? `<b>${esc(bill[0])}</b>${bill.length>1 ? '\n'+esc(bill.slice(1).join('\n')) : ''}` : '';
+  const pjRest = [cur.projAddr, cur.projPo ? 'PO / Job #: '+cur.projPo : ''].filter(Boolean);
+  const projHTML = `<b>${esc(cur.projName)}</b>${pjRest.length ? '\n'+esc(pjRest.join('\n')) : ''}`;
+
+  const works = cur.workItems.filter(workShows);
+  const workHTML = works.length ? `<div class="s-sec"><h3 class="s-label">Work performed</h3>
+    <ul class="s-work">${works.map(w=>`<li>${esc(txt(w.desc))}</li>`).join('')}</ul></div>` : '';
+
+  const cos = cur.changeOrders.filter(coShows);
+  const coHTML = cos.length ? `<div class="s-sec"><h3 class="s-label">Change orders</h3>
+    <table class="s-co">
+      <tr><th>Change order / description</th><th class="nc">Notes</th><th class="r">Amount</th><th class="r">Billable</th></tr>
+      ${cos.map(x=>`<tr><td class="d">${esc(txt(x.desc))}${txt(x.notes)?`<div class="ni">${esc(txt(x.notes))}</div>`:''}</td>
+        <td class="nc">${esc(txt(x.notes))}</td><td class="r">${sm(x.amount)}</td><td class="r">${sm(x.billable)}</td></tr>`).join('')}
+      <tr class="tot"><td colspan="3" style="text-align:right">Approved change orders</td><td class="r">${sm(c.approvedCO)}</td></tr>
+    </table></div>` : '';
 
   const sum = [
-    ['Original Purchase Order Amount', money(cur.originalPO),'inp'],
-    ['Approved Change Orders', money(c.approvedCO),''],
-    ['Total Current Purchase Order', money(c.totalPO),''],
-    ['Percentage of Project Completed', n(cur.percentComplete).toFixed(1)+'%','inp'],
-    ['Gross Amount Due to Date', money(c.grossToDate),''],
-    ['Less Previous Payment Requests', money(cur.previousPayments),'inp'],
-    ['Gross Amount Due this Period', money(c.grossPeriod),''],
-    ['Retainage Rate', n(cur.retainageRate).toFixed(1)+'%','inp'],
-    ['Less Retainage', money(c.lessRet),''],
-    ['Current Amount Due', money(c.currentDue),'due'],
-    ['Retainage to Date', money(c.retToDate),'']
-  ].map(([l,v,k])=>`<tr class="${k==='due'?'due':''}"><td>${l}</td>
-      <td class="r num ${k==='inp'?'inp':''}">${v}</td></tr>`).join('');
+    ['Original Purchase Order Amount', sm(cur.originalPO), ''],
+    ['Approved Change Orders', sm(c.approvedCO), ''],
+    ['Total Current Purchase Order', sm(c.totalPO), 'sub'],
+    ['Percentage of Project Completed', pctText(cur.percentComplete), ''],
+    ['Gross Amount Due to Date', sm(c.grossToDate), ''],
+    ['Less Previous Payment Requests', sm(cur.previousPayments), ''],
+    ['Gross Amount Due this Period', sm(c.grossPeriod), 'sub'],
+    ['Retainage Rate', pctText(cur.retainageRate), ''],
+    ['Less Retainage', sm(c.lessRet), ''],
+    ['Current Amount Due', sm(c.currentDue), 'due'],
+    ['Retainage to Date', sm(c.retToDate), 'muted']
+  ].map(([l,v,k])=>`<tr class="${k}"><td>${l}</td><td class="r">${v}</td></tr>`).join('');
 
-  const addr = [company.name, company.street, company.cityline, company.phone, company.email].filter(Boolean);
-
-  $('sheet').innerHTML = `
-    <div class="title">INVOICE</div>
-    <div class="meta">
-      <div class="left"><b>${esc(addr[0]||'')}</b>${addr.slice(1).map(l=>'\n'+esc(l)).join('')}</div>
-      <div class="right">
-        <div><span>Date:</span><b class="num">${fmtDate(cur.date)}</b></div>
-        <div><span>Invoice #:</span><b class="num">${esc(cur.invoiceNo)}</b></div>
-        <div><span>Payment Request #:</span><b class="num">${esc(cur.paymentRequestNo)}</b></div>
-        <div><span>Period Ending:</span><b class="num">${fmtDate(cur.periodEnding)}</b></div>
+  return `
+    <div class="s-strip"></div>
+    <div class="s-in">
+      <div class="s-head">
+        <div class="s-from">${from}</div>
+        <div class="s-title">
+          <h1>INVOICE</h1>
+          <dl class="s-meta">
+            <dt>Invoice #</dt><dd>${esc(cur.invoiceNo)}</dd>
+            <dt>Invoice Date</dt><dd>${fmtDate(cur.date)}</dd>
+            <dt>Payment Request #</dt><dd>${esc(cur.paymentRequestNo)}</dd>
+            <dt>Period Ending</dt><dd>${fmtDate(cur.periodEnding)}</dd>
+          </dl>
+        </div>
       </div>
-    </div>
-    <div class="bar">PROJECT &amp; BILL TO</div>
-    <div class="party">
-      <div><span class="lbl">Project:</span> ${esc(cur.projName)}${cur.projAddr?'\n'+esc(cur.projAddr):''}${cur.projPo?'\nPO #: '+esc(cur.projPo):''}</div>
-      <div><span class="lbl">Bill To:</span> ${esc(cur.billTo)}</div>
-    </div>
-    <div class="bar">CHANGE ORDERS</div>
-    <table>
-      <tr><th>Change Order / Description</th><th style="width:86px">Amount</th>
-          <th style="width:92px">Amount Billable</th><th style="width:92px">Notes</th></tr>
-      ${coRows}
-      <tr class="tot"><td>Approved Change Orders (sum billable)</td><td></td>
-        <td class="r num">${money0(c.approvedCO)}</td><td></td></tr>
-    </table>
-    <div class="bar" style="margin-top:14px">SUMMARY</div>
-    <table class="sum">${sum}</table>
-    <div class="grand"><span>TOTAL DUE THIS INVOICE</span><span class="num">${money(c.currentDue)}</span></div>
-    <div class="pad"><div class="notes">${esc(cur.notes)}</div></div>`;
+      <div class="s-parties">
+        <div><h3 class="s-label">Bill to</h3><p>${billHTML}</p></div>
+        <div><h3 class="s-label">Project</h3><p>${projHTML}</p></div>
+      </div>
+      ${workHTML}
+      ${coHTML}
+      <div class="s-bottom">
+        <div class="s-notes"><h3 class="s-label">Notes &amp; terms</h3><p>${esc(cur.notes)}</p></div>
+        <div class="s-sum"><h3 class="s-label">Summary</h3>
+          <table>${sum}</table>
+          <div class="s-total"><span>TOTAL DUE THIS INVOICE</span><b>${money(c.currentDue)}</b></div>
+        </div>
+      </div>
+    </div>`;
+}
+
+/* The invoice you're working on is kept on the device, so closing the app loses nothing. */
+let draftTimer = null;
+function flushDraft(){ clearTimeout(draftTimer); return Store.set(K_DRAFT, { cur, editingId, dirty }); }
+function queueDraft(){ clearTimeout(draftTimer); draftTimer = setTimeout(flushDraft, 500); }
+document.addEventListener('visibilitychange', () => { if (document.hidden && cur) flushDraft(); });
+window.addEventListener('pagehide', () => { if (cur) flushDraft(); });
+
+function renderAll(){
+  const c = calc(cur);
+  $('coSum').textContent = money(c.approvedCO);
+  $('dueBig').textContent = money(c.currentDue);
+  $('stDate').textContent = money(c.grossToDate);
+  $('stPeriod').textContent = money(c.grossPeriod);
+  $('stRet').textContent = money(c.retToDate);
+  $('hTitle').textContent = cur.projName || 'New invoice';
+  $('hSub').innerHTML = cur.projName
+    ? 'Invoice #'+esc(cur.invoiceNo)+' · period ending '+fmtDate(cur.periodEnding) +
+      (dirty ? ' · <i>not saved yet</i>' : (editingId ? ' · saved' : ''))
+    : 'Pick a project to start';
+
+  $('psName').textContent = cur.projName || 'Untitled project';
+  $('psLine').textContent = [txt(cur.billTo).split('\n')[0], 'PO '+money0(cur.originalPO),
+    'retainage '+pctText(cur.retainageRate)].filter(Boolean).join(' · ');
+
+  const p = projects.find(x=>x.id===cur.projectId);
+  let ph = '';
+  if (p && p.lastInvoiceNo && !editingId){
+    ph = 'Last invoice (#'+p.lastInvoiceNo+') was at '+pctText(p.lastPercent)+'.';
+    const d = n(cur.percentComplete) - n(p.lastPercent);
+    if (d > 0) ph += ' This one adds '+pctText(d)+'.';
+  }
+  $('pctHint').textContent = ph;
+  $('pctHint').hidden = !ph;
+
+  $('checks').innerHTML = checksFor(c).map(t=>`<div>${esc(t)}</div>`).join('');
+  $('sheet').innerHTML = sheetHTML(c);
 
   scheduleBuild();
+  queueDraft();
 }
+function edited(){ dirty = true; renderAll(); }
 
 /* =========================================================================
    9. INPUT WIRING
    ========================================================================= */
-const bindText = (id,key) => $(id).addEventListener('input', e => { cur[key]=e.target.value; renderAll(); });
+const bindText = (id,key) => $(id).addEventListener('input', e => { cur[key]=e.target.value; edited(); });
 function bindNum(id,key){
-  $(id).addEventListener('input', e => { cur[key]=n(e.target.value); renderAll(); });
+  $(id).addEventListener('input', e => { cur[key]=n(e.target.value); edited(); });
   $(id).addEventListener('blur', e => {
     const v = n(e.target.value);
     e.target.value = v ? v.toLocaleString('en-US',{maximumFractionDigits:2}) : '';
@@ -851,98 +1147,180 @@ function bindNum(id,key){
 }
 bindText('pName','projName'); bindText('pPo','projPo'); bindText('pAddr','projAddr');
 bindText('pBill','billTo');   bindText('pEmail','custEmail');
-bindText('iNo','invoiceNo');  bindText('iPr','paymentRequestNo');
+bindText('iPr','paymentRequestNo');
 bindText('iDate','date');     bindText('iPeriod','periodEnding');
 bindText('iNotes','notes');
 bindNum('origPO','originalPO'); bindNum('prevPay','previousPayments');
-$('retRate').addEventListener('input', e => { cur.retainageRate=n(e.target.value); renderAll(); });
+/* Payment request # follows the invoice # unless you've set it to something different. */
+$('iNo').addEventListener('input', e => {
+  const follow = txt(cur.paymentRequestNo) === txt(cur.invoiceNo) || !txt(cur.paymentRequestNo);
+  cur.invoiceNo = e.target.value;
+  if (follow){ cur.paymentRequestNo = e.target.value; $('iPr').value = e.target.value; }
+  edited();
+});
+$('retRate').addEventListener('input', e => { cur.retainageRate=n(e.target.value); edited(); });
 $('pct').addEventListener('input', e => {
   cur.percentComplete = n(e.target.value);
-  $('pctRange').value = Math.min(100, cur.percentComplete); renderAll();
+  $('pctRange').value = Math.min(100, cur.percentComplete); edited();
 });
 $('pctRange').addEventListener('input', e => {
   cur.percentComplete = n(e.target.value);
-  $('pct').value = cur.percentComplete; renderAll();
+  $('pct').value = cur.percentComplete; edited();
 });
+$('btnProjToggle').addEventListener('click', ()=> setProjOpen(!projOpen));
+
+/* --- work descriptions --- */
+$('workBody').addEventListener('input', e => {
+  if (e.target.dataset.f !== 'desc') return;
+  const i = +e.target.closest('[data-i]').dataset.i;
+  cur.workItems[i].desc = e.target.value;
+  grow(e.target);
+  edited();
+});
+/* --- change orders --- */
 $('coBody').addEventListener('input', e => {
   const f = e.target.dataset.f; if(!f) return;
   const row = e.target.closest('.corow'), i = +row.dataset.i;
-  cur.changeOrders[i][f] = e.target.value;
-  if (f==='amount' && !String(cur.changeOrders[i].billable).trim()){
-    cur.changeOrders[i].billable = e.target.value;
-    const b = row.querySelector('[data-f=billable]');
-    if (b) b.value = e.target.value;
-  }
-  renderAll();
+  const item = cur.changeOrders[i];
+  if (f === 'amount'){
+    // Billable mirrors Amount while it's empty or still equal to it, so typing "1500" fills both.
+    const follow = !txt(item.billable) || n(item.billable) === n(item.amount);
+    item.amount = e.target.value;
+    if (follow){
+      item.billable = e.target.value;
+      const b = row.querySelector('[data-f=billable]');
+      if (b) b.value = e.target.value;
+    }
+  } else item[f] = e.target.value;
+  edited();
 });
-$('coBody').addEventListener('click', e => {
-  const d = e.target.closest('[data-del]'); if(!d) return;
-  cur.changeOrders.splice(+d.dataset.del,1);
-  if(!cur.changeOrders.length) cur.changeOrders.push({desc:'',amount:'',billable:'',notes:''});
-  renderCoRows(); renderAll();
+$('coBody').addEventListener('blur', e => {
+  const f = e.target.dataset.f;
+  if (f !== 'amount' && f !== 'billable') return;
+  const v = n(e.target.value), s = v ? v.toLocaleString('en-US',{maximumFractionDigits:2}) : '';
+  if (s === e.target.value) return;
+  const i = +e.target.closest('.corow').dataset.i;
+  e.target.value = s; cur.changeOrders[i][f] = s;
+  queueDraft();
+}, true);
+
+function removable(listKey, rerender, what){
+  return e => {
+    const d = e.target.closest('[data-del]'); if(!d) return;
+    const i = +d.dataset.del;
+    const [gone] = cur[listKey].splice(i,1);
+    rerender(); edited();
+    const hadText = listKey === 'workItems' ? workShows(gone) : coKeep(gone);
+    if (hadText) toast(what+' removed', false, { label:'Undo', fn:()=>{
+      cur[listKey].splice(Math.min(i, cur[listKey].length), 0, gone);
+      rerender(); edited();
+    }});
+  };
+}
+$('workBody').addEventListener('click', removable('workItems', renderWorkRows, 'Work description'));
+$('coBody').addEventListener('click', removable('changeOrders', renderCoRows, 'Change order'));
+
+function focusLast(boxId){
+  const rows = $(boxId).querySelectorAll('[data-i]');
+  if (rows.length) rows[rows.length-1].querySelector('input,textarea').focus();
+}
+$('addWork').addEventListener('click', () => {
+  cur.workItems.push(blankWork()); renderWorkRows(); edited(); focusLast('workBody');
 });
 $('addCo').addEventListener('click', () => {
-  cur.changeOrders.push({desc:'',amount:'',billable:'',notes:''});
-  renderCoRows(); renderAll();
-  const rows = $('coBody').querySelectorAll('.corow');
-  if (rows.length) rows[rows.length-1].querySelector('input').focus();
+  cur.changeOrders.push(blankCO()); renderCoRows(); edited(); focusLast('coBody');
 });
+
+function okToLeave(){
+  return !dirty || confirm('This invoice has changes that are not saved. Discard them?');
+}
+function startFrom(inv, id, isDirty){
+  cur = inv; editingId = id; dirty = !!isDirty;
+  renderForm(); renderAll();
+}
 $('projPick').addEventListener('change', e => {
   const v = e.target.value;
-  if (v==='__new'){ cur = blankInvoice(); editingId = null; renderForm(); renderAll(); return; }
-  if (!v){ cur.projectId = null; renderForm(); renderAll(); return; }
+  if (v === (cur.projectId||'')) return;
+  if (!v){ cur.projectId = null; editingId = null; edited(); setProjOpen(true); return; }
+  if (!okToLeave()){ e.target.value = projects.some(p=>p.id===cur.projectId) ? cur.projectId : ''; return; }
+  if (v==='__new'){ startFrom(blankInvoice(), null, false); $('pName').focus(); return; }
   const p = projects.find(x=>x.id===v);
-  if (p){ loadProject(p); editingId = null; renderForm(); renderAll(); }
+  if (p){ const inv = blankInvoice(); cur = inv; loadProject(p); startFrom(cur, null, false); }
 });
 
 /* =========================================================================
    10. SAVE
    ========================================================================= */
-function toast(msg, bad){
+function toast(msg, bad, action){
   const t = $('toast');
-  t.textContent = msg;
-  t.className = 'toast show' + (bad?' bad':'');
+  t.textContent = '';
+  const s = document.createElement('span'); s.textContent = msg; t.appendChild(s);
+  if (action){
+    const b = document.createElement('button');
+    b.type = 'button'; b.textContent = action.label;
+    b.addEventListener('click', ()=>{ t.className = 'toast'; action.fn(); });
+    t.appendChild(b);
+  }
+  t.className = 'toast show' + (bad?' bad':'') + (action?' act':'');
   clearTimeout(t._h);
-  t._h = setTimeout(()=> t.className='toast', 3200);
+  t._h = setTimeout(()=> t.className='toast', action ? 5500 : 3200);
 }
+/* Updates the project's carry-forward numbers. An older invoice (lower number than the
+   project's latest) is saved on its own and leaves the project's running totals alone. */
 function syncProject(){
   const c = calc(cur);
   let p = projects.find(x=>x.id===cur.projectId);
   if (!p){ p = { id: uid() }; projects.push(p); cur.projectId = p.id; }
+  const num = parseInt(cur.invoiceNo,10)||0, latest = parseInt(p.lastInvoiceNo,10)||0;
+  if (p.lastInvoiceNo && num < latest) return { p, older:true };
   Object.assign(p, {
     name: cur.projName || 'Untitled project', address:cur.projAddr, po:cur.projPo,
     billTo:cur.billTo, email:cur.custEmail,
     originalPO:n(cur.originalPO), retainageRate:n(cur.retainageRate),
-    changeOrders:cur.changeOrders.map(x=>({...x})), notes:cur.notes,
+    changeOrders:cur.changeOrders.filter(coKeep).map(x=>({...x})),
+    workItems:cur.workItems.filter(workShows).map(x=>({desc:x.desc})),
+    notes:cur.notes,
     lastPercent:n(cur.percentComplete), lastInvoiceNo:cur.invoiceNo,
     previousPayments:+c.grossToDate.toFixed(2),
     nextInvoiceNo:(parseInt(cur.invoiceNo,10)||0)+1
   });
-  return p;
+  return { p, older:false };
 }
 function needsName(){
-  if (String(cur.projName).trim()) return false;
-  showPane('invoice'); toast('Give the project a name first', true); $('pName').focus();
+  if (txt(cur.projName)) return false;
+  showPane('invoice'); setProjOpen(true);
+  toast('Give the project a name first', true); $('pName').focus();
   return true;
 }
 async function saveInvoice(silent){
   if (needsName()) return false;
   const c = calc(cur);
-  const p = syncProject();
+  const { p, older } = syncProject();
+  const before = history.find(h=>h.id===editingId);
   const rec = { id: editingId||uid(), savedAt:new Date().toISOString(),
-                currentDue:+c.currentDue.toFixed(2), data: JSON.parse(JSON.stringify(cur)) };
+                sentAt: before ? before.sentAt || null : null,
+                currentDue:+c.currentDue.toFixed(2), data: clone(cur) };
   const at = history.findIndex(h=>h.id===rec.id);
   if (at>=0) history[at]=rec; else history.unshift(rec);
   editingId = rec.id;
-  await Store.set(K_PROJ, projects);
-  await Store.set(K_HIST, history);
-  fillPicker();
-  if (!silent) toast('Saved · next invoice starts at #'+p.nextInvoiceNo);
+  dirty = false;
+  const ok = (await Store.set(K_PROJ, projects)) & (await Store.set(K_HIST, history));
+  fillPicker(); setProjOpen(projOpen);
+  $('hSub').innerHTML = 'Invoice #'+esc(cur.invoiceNo)+' · period ending '+fmtDate(cur.periodEnding)+' · saved';
+  flushDraft();
+  if (!ok && Store.mode !== 'memory') toast('Could not save — device storage is full', true);
+  else if (!silent) toast(older
+    ? 'Saved. Project totals unchanged — a newer invoice (#'+p.lastInvoiceNo+') exists'
+    : 'Saved · next invoice starts at #'+p.nextInvoiceNo);
   return true;
+}
+function markSent(){
+  const h = history.find(x=>x.id===editingId);
+  if (h){ h.sentAt = new Date().toISOString(); Store.set(K_HIST, history); }
 }
 
 /* =========================================================================
-   11. SHARE — hands the real .xlsx to the system share sheet
+   11. SEND — hands the real .xlsx to the system share sheet
    ========================================================================= */
 const subjectLine = () => 'Invoice #'+cur.invoiceNo+' — '+(cur.projName||'')+' — '+(company.name||'');
 function shareNote(){
@@ -966,18 +1344,18 @@ function mailtoDraft(){
 function shareOrFallback(file, secondTry){
   if (canShareFiles(file)){
     navigator.share({ files:[file], title: subjectLine(), text: shareNote() })
-      .then(()=> toast('Invoice shared'))
+      .then(()=>{ markSent(); toast('Invoice sent'); })
       .catch(err => {
         if (err && err.name === 'AbortError') return;
         if (err && err.name === 'NotAllowedError' && !secondTry){
-          toast('Invoice is ready — tap Share once more');
+          toast('Invoice is ready — tap Send once more');
           return;
         }
-        downloadFile(file);
+        downloadFile(file); markSent();
         toast('Invoice saved to your files — share it from there');
       });
   } else {
-    downloadFile(file);
+    downloadFile(file); markSent();
     toast('Invoice saved to your files — share it from there');
   }
 }
@@ -995,23 +1373,21 @@ function withFile(fn, whenNotReady){
 $('btnShare').addEventListener('click', function(){
   withFile(shareOrFallback, ()=> toast('Building the invoice…'));
 });
-
 $('btnFile').addEventListener('click', function(){
   withFile(file => { downloadFile(file); toast('Excel file saved'); });
 });
-
 $('btnEmail').addEventListener('click', function(){
   withFile(file => {
-    downloadFile(file);
+    downloadFile(file); markSent();
     setTimeout(mailtoDraft, 700);
     toast('Invoice saved — attach it to the draft');
   }, ()=> toast('Building the invoice…'));
 });
-
 $('btnSave').addEventListener('click', ()=> saveInvoice());
 $('btnPrint').addEventListener('click', ()=> window.print());
 $('btnNew').addEventListener('click', ()=>{
-  cur = blankInvoice(); editingId = null; renderForm(); renderAll(); toast('Blank invoice started');
+  if (!okToLeave()) return;
+  startFrom(blankInvoice(), null, false); toast('Blank invoice started');
 });
 
 /* =========================================================================
@@ -1024,6 +1400,7 @@ function showPane(v){
   if (v==='projects') renderProjects();
   if (v==='saved') renderSaved();
   if (v==='settings') renderSettings();
+  if (v==='invoice') requestAnimationFrame(growAll);
   window.scrollTo(0,0);
 }
 document.querySelectorAll('.tabbar button,.wide-nav button')
@@ -1035,14 +1412,14 @@ document.querySelectorAll('.tabbar button,.wide-nav button')
 function renderProjects(){
   $('paneProjects').innerHTML = `
     <div class="card"><h2>Projects</h2><div class="body">
-      <p class="hint" style="margin:0 0 10px">Each project remembers its purchase order, change orders, retainage and how much you have billed.</p>
+      <p class="hint" style="margin:0 0 10px">Each project remembers its purchase order, work descriptions, change orders, retainage and how much you have billed.</p>
       ${projects.length ? projects.map(p=>`
         <div class="rowitem"><div class="main">
           <b>${esc(p.name)}</b>
           <small>${esc((p.billTo||'').split('\n')[0])} · PO ${money0(p.originalPO)} · billed ${money(p.previousPayments||0)} · next #${esc(p.nextInvoiceNo||1)}</small>
         </div>
-        <button class="btn" data-use="${p.id}">New invoice</button>
-        <button class="btn" data-rm="${p.id}">Delete</button></div>`).join('')
+        <button class="btn primary" data-use="${p.id}">Next invoice</button>
+        <button class="btn danger" data-rm="${p.id}">Delete</button></div>`).join('')
         : '<div class="empty">No projects yet. Start one on the Invoice tab.</div>'}
     </div></div>
     <div class="card"><h2>Backup</h2><div class="body">
@@ -1052,19 +1429,20 @@ function renderProjects(){
       <input type="file" id="restoreFile" accept="application/json,.json" style="display:none">
     </div></div>`;
   $('paneProjects').querySelectorAll('[data-use]').forEach(b=> b.addEventListener('click', ()=>{
-    cur = blankInvoice(); editingId = null;
+    if (!okToLeave()) return;
+    cur = blankInvoice();
     loadProject(projects.find(x=>x.id===b.dataset.use));
-    renderForm(); renderAll(); showPane('invoice');
+    startFrom(cur, null, false); showPane('invoice');
   }));
   $('paneProjects').querySelectorAll('[data-rm]').forEach(b=> b.addEventListener('click', async ()=>{
     const p = projects.find(x=>x.id===b.dataset.rm);
     if (!confirm('Delete "'+p.name+'"? Saved invoices are kept.')) return;
     projects = projects.filter(x=>x.id!==p.id);
     await Store.set(K_PROJ, projects);
-    renderProjects(); fillPicker(); toast('Project deleted');
+    renderProjects(); fillPicker(); setProjOpen(projOpen); toast('Project deleted');
   }));
   $('btnBackup').addEventListener('click', ()=>{
-    const f = new File([JSON.stringify({company,projects,history},null,2)],
+    const f = new File([JSON.stringify({company,logo,projects,history},null,2)],
       'invoice-backup-'+todayISO()+'.json', {type:'application/json'});
     if (canShareFiles(f)) navigator.share({files:[f]}).catch(()=>downloadFile(f));
     else downloadFile(f);
@@ -1077,46 +1455,145 @@ function renderProjects(){
       try{
         const d = JSON.parse(r.result);
         if (d.company) company = Object.assign(company, d.company);
+        if (d.logo !== undefined) logo = d.logo;
         if (d.projects) projects = d.projects;
         if (d.history) history = d.history;
-        await Store.set(K_CO,company); await Store.set(K_PROJ,projects); await Store.set(K_HIST,history);
-        renderProjects(); fillPicker(); renderAll(); toast('Backup restored');
+        await Store.set(K_CO,company); await Store.set(K_LOGO,logo);
+        await Store.set(K_PROJ,projects); await Store.set(K_HIST,history);
+        renderProjects(); fillPicker(); setProjOpen(projOpen); renderAll(); toast('Backup restored');
       }catch(err){ toast('That file could not be read', true); }
     };
     r.readAsText(f);
   });
 }
 
+let savedQuery = '';
 function renderSaved(){
   $('paneSaved').innerHTML = `<div class="card"><h2>Saved invoices</h2><div class="body">
-    ${history.length ? history.map(h=>`
+    ${history.length > 4 ? `<label class="field" style="margin-bottom:6px"><span>Find</span>
+      <input type="search" id="savedQ" placeholder="Project or invoice #" value="${esc(savedQuery)}"></label>` : ''}
+    <div id="savedList"></div>
+  </div></div>`;
+  const q = $('savedQ');
+  if (q) q.addEventListener('input', e => { savedQuery = e.target.value; renderSavedList(); });
+  renderSavedList();
+}
+function renderSavedList(){
+  const q = savedQuery.trim().toLowerCase();
+  const list = history.filter(h => !q || (String(h.data.projName)+' #'+h.data.invoiceNo).toLowerCase().includes(q));
+  $('savedList').innerHTML = list.length ? list.map(h=>`
       <div class="rowitem"><div class="main">
-        <b>#${esc(h.data.invoiceNo)} — ${esc(h.data.projName)}</b>
+        <b>#${esc(h.data.invoiceNo)} — ${esc(h.data.projName)}${h.sentAt
+          ? `<span class="chip sent">Sent ${fmtDate(isoOf(new Date(h.sentAt)))}</span>` : '<span class="chip">Not sent</span>'}</b>
         <small>Period ending ${fmtDate(h.data.periodEnding)} · ${money(h.currentDue)}</small>
       </div>
       <button class="btn" data-open="${h.id}">Open</button>
-      <button class="btn" data-copy="${h.id}">Duplicate</button></div>`).join('')
-      : '<div class="empty">No saved invoices yet.</div>'}
-  </div></div>`;
-  $('paneSaved').querySelectorAll('[data-open]').forEach(b=> b.addEventListener('click', ()=>{
+      <button class="btn" data-copy="${h.id}">Duplicate</button>
+      <button class="btn danger" data-del="${h.id}">Delete</button></div>`).join('')
+    : `<div class="empty">${history.length ? 'Nothing matches.' : 'No saved invoices yet.'}</div>`;
+  const box = $('savedList');
+  box.querySelectorAll('[data-open]').forEach(b=> b.addEventListener('click', ()=>{
+    if (!okToLeave()) return;
     const h = history.find(x=>x.id===b.dataset.open);
-    cur = JSON.parse(JSON.stringify(h.data)); editingId = h.id;
-    renderForm(); renderAll(); showPane('invoice');
+    startFrom(normalize(clone(h.data)), h.id, false); showPane('invoice');
   }));
-  $('paneSaved').querySelectorAll('[data-copy]').forEach(b=> b.addEventListener('click', ()=>{
+  box.querySelectorAll('[data-copy]').forEach(b=> b.addEventListener('click', ()=>{
+    if (!okToLeave()) return;
     const h = history.find(x=>x.id===b.dataset.copy);
-    cur = JSON.parse(JSON.stringify(h.data)); editingId = null;
-    cur.invoiceNo = (parseInt(cur.invoiceNo,10)||0)+1;
-    cur.paymentRequestNo = cur.invoiceNo;
-    cur.date = todayISO(); cur.periodEnding = endOfMonthISO();
-    renderForm(); renderAll(); showPane('invoice');
-    toast('Copied to invoice #'+cur.invoiceNo);
+    const inv = normalize(clone(h.data));
+    inv.invoiceNo = (parseInt(inv.invoiceNo,10)||0)+1;
+    inv.paymentRequestNo = inv.invoiceNo;
+    inv.date = todayISO(); inv.periodEnding = endOfMonthISO();
+    startFrom(inv, null, true); showPane('invoice');
+    toast('Copied to invoice #'+inv.invoiceNo);
+  }));
+  box.querySelectorAll('[data-del]').forEach(b=> b.addEventListener('click', async ()=>{
+    const h = history.find(x=>x.id===b.dataset.del);
+    if (!confirm('Delete saved invoice #'+h.data.invoiceNo+' for '+h.data.projName+'? Project totals are not changed.')) return;
+    history = history.filter(x=>x.id!==h.id);
+    if (editingId === h.id){ editingId = null; dirty = true; renderAll(); }
+    await Store.set(K_HIST, history);
+    renderSavedList(); toast('Saved invoice deleted');
   }));
 }
 
+/* ---- logo: shrink, trim blank margins, keep it small enough to store ---- */
+function prepLogo(file){
+  return new Promise((resolve, reject)=>{
+    const fr = new FileReader();
+    fr.onerror = reject;
+    fr.onload = () => {
+      const img = new Image();
+      img.onerror = reject;
+      img.onload = () => {
+        try{
+          let w = img.naturalWidth || 600, h = img.naturalHeight || 300;
+          const s1 = Math.min(1, 1600/Math.max(w,h));
+          w = Math.max(1, Math.round(w*s1)); h = Math.max(1, Math.round(h*s1));
+          const c1 = document.createElement('canvas'); c1.width = w; c1.height = h;
+          const x1 = c1.getContext('2d'); x1.drawImage(img, 0, 0, w, h);
+          const d = x1.getImageData(0, 0, w, h).data;
+          let minX = w, minY = h, maxX = -1, maxY = -1;
+          for (let y=0; y<h; y++) for (let x=0; x<w; x++){
+            const i = (y*w + x)*4;
+            if (d[i+3] > 16 && !(d[i] > 244 && d[i+1] > 244 && d[i+2] > 244)){
+              if (x<minX) minX=x; if (x>maxX) maxX=x; if (y<minY) minY=y; if (y>maxY) maxY=y;
+            }
+          }
+          if (maxX < 0){ minX = 0; minY = 0; maxX = w-1; maxY = h-1; }
+          const cw = maxX-minX+1, ch = maxY-minY+1;
+          const s2 = Math.min(1, 720/cw, 260/ch);
+          const ow = Math.max(1, Math.round(cw*s2)), oh = Math.max(1, Math.round(ch*s2));
+          const c2 = document.createElement('canvas'); c2.width = ow; c2.height = oh;
+          const x2 = c2.getContext('2d'); x2.imageSmoothingQuality = 'high';
+          x2.drawImage(c1, minX, minY, cw, ch, 0, 0, ow, oh);
+          let src = c2.toDataURL('image/png');
+          if (src.length > 700000){
+            const c3 = document.createElement('canvas'); c3.width = ow; c3.height = oh;
+            const x3 = c3.getContext('2d'); x3.fillStyle = '#fff'; x3.fillRect(0,0,ow,oh);
+            x3.drawImage(c2, 0, 0); src = c3.toDataURL('image/jpeg', 0.9);
+          }
+          resolve({ src, w: ow, h: oh });
+        }catch(e){ reject(e); }
+      };
+      img.src = fr.result;
+    };
+    fr.readAsDataURL(file);
+  });
+}
+
+let settingsTimer = null;
+function settingsChanged(){
+  renderAll();
+  clearTimeout(settingsTimer);
+  settingsTimer = setTimeout(async ()=>{
+    await Store.set(K_CO, company);
+    const s = $('setSaved'); if (s){ s.hidden = false; clearTimeout(s._h); s._h = setTimeout(()=> s.hidden = true, 1800); }
+  }, 400);
+}
+function renderLogoBox(){
+  const box = $('logoBox'); if (!box) return;
+  box.innerHTML = logo ? `<img src="${logo.src}" alt="Your logo">` : 'No logo yet';
+  $('btnLogo').textContent = logo ? 'Replace logo' : 'Upload logo';
+  $('btnLogoRm').hidden = !logo;
+  $('hideRow').hidden = !logo;
+}
 function renderSettings(){
-  $('paneSettings').innerHTML = `<div class="card"><h2>Your company</h2><div class="body">
-    <p class="hint" style="margin:0 0 12px">This appears at the top of every invoice. Set it once.</p>
+  $('paneSettings').innerHTML = `
+  <div class="card"><h2>Logo</h2><div class="body">
+    <div class="logobox" id="logoBox"></div>
+    <div class="btnrow">
+      <button class="btn primary" type="button" id="btnLogo">Upload logo</button>
+      <button class="btn danger" type="button" id="btnLogoRm">Remove</button>
+    </div>
+    <input type="file" id="logoFile" accept="image/*" style="display:none">
+    <label class="check" id="hideRow"><input type="checkbox" id="sHide" ${company.hideName?'checked':''}>
+      <span>My logo already shows the company name — don't print it twice</span></label>
+    <p class="hint">Prints at the top-left of every invoice and in the Excel file. A PNG with a transparent or white background looks best; extra white space around it is trimmed automatically.</p>
+  </div></div>
+
+  <div class="card"><h2>Your company <span class="aside saved-ok" id="setSaved" hidden>Saved</span></h2><div class="body">
+    <p class="hint" style="margin:0 0 12px">This appears at the top of every invoice. Changes save automatically.</p>
     <label class="field"><span>Company name</span><input type="text" id="sName" value="${esc(company.name)}"></label>
     <label class="field"><span>Street address</span><input type="text" id="sStreet" value="${esc(company.street)}"></label>
     <label class="field"><span>City, state, ZIP</span><input type="text" id="sCity" value="${esc(company.cityline)}"></label>
@@ -1126,31 +1603,51 @@ function renderSettings(){
     </div>
     <label class="field"><span>Your name (signs off emails)</span><input type="text" id="sFrom" value="${esc(company.fromName)}"></label>
     <label class="field"><span>Default notes and payment terms</span><textarea id="sNotes">${esc(company.defaultNotes)}</textarea></label>
-    <label class="field" style="display:flex; align-items:center; gap:10px">
-      <input type="checkbox" id="sCents" ${company.showCents?'checked':''} style="width:24px;height:24px;min-height:0;accent-color:var(--steel)">
-      <span style="margin:0">Show cents (off rounds to whole dollars)</span>
-    </label>
-    <button class="btn primary wide" id="sSave">Save settings</button>
+    <label class="check"><input type="checkbox" id="sCents" ${company.showCents?'checked':''}>
+      <span>Show cents (off rounds to whole dollars)</span></label>
   </div></div>
-  <div class="card"><h2>How sharing works</h2><div class="body">
+
+  <div class="card"><h2>How sending works</h2><div class="body">
     <p class="hint" id="sendCap" style="margin:0 0 8px"></p>
-    <p class="hint" style="margin:0">Share hands the finished spreadsheet to your device's share sheet, so you can
-    send it by email or text message, AirDrop it, drop it in Files, or use any other app on the device — the
-    invoice goes along as a real attachment. If a browser has no share sheet, the invoice downloads instead and
-    you attach it yourself; <b>Email draft</b> under Notes and terms opens a pre-written message for that case.</p>
+    <p class="hint" style="margin:0">Send hands the finished spreadsheet to your device's share sheet, so you can
+    email or text it, AirDrop it, drop it in Files, or use any other app — the invoice goes along as a real
+    attachment. If a browser has no share sheet, the invoice downloads instead and you attach it yourself;
+    <b>Email draft</b> under Notes and terms opens a pre-written message for that case. <b>Print / PDF</b>
+    prints the invoice or saves it as a PDF.</p>
   </div></div>
   <div class="card"><h2>Put this on your home screen</h2><div class="body">
     <p class="hint" style="margin:0">On iPad or iPhone, open this page in Safari, tap the Share button, and choose <b>Add to Home Screen</b>. It then opens full screen like a regular app.</p>
   </div></div>`;
+
+  renderLogoBox();
   $('sendCap').innerHTML = canShareFiles(new File([''],'t.xlsx',{type:XLSX_MIME}))
-    ? '<b>This device has a share sheet.</b> Tap Share and pick Mail, Messages, AirDrop or anything else — the invoice goes with it.'
-    : '<b>This browser has no share sheet.</b> Share will save the invoice to your files so you can attach it yourself. Open the app in Safari on your iPad for one-tap sharing.';
-  $('sSave').addEventListener('click', async ()=>{
-    company = { name:$('sName').value, street:$('sStreet').value, cityline:$('sCity').value,
-      phone:$('sPhone').value, email:$('sEmail').value, fromName:$('sFrom').value,
-      defaultNotes:$('sNotes').value, showCents:$('sCents').checked };
-    await Store.set(K_CO, company);
-    renderAll(); toast('Settings saved');
+    ? '<b>This device has a share sheet.</b> Tap Send and pick Mail, Messages, AirDrop or anything else — the invoice goes with it.'
+    : '<b>This browser has no share sheet.</b> Send will save the invoice to your files so you can attach it yourself. Open the app in Safari on your iPad for one-tap sending.';
+
+  const fields = { sName:'name', sStreet:'street', sCity:'cityline', sPhone:'phone',
+                   sEmail:'email', sFrom:'fromName', sNotes:'defaultNotes' };
+  Object.keys(fields).forEach(id => $(id).addEventListener('input', e => {
+    company[fields[id]] = e.target.value; settingsChanged();
+  }));
+  $('sCents').addEventListener('change', e => { company.showCents = e.target.checked; settingsChanged(); });
+  $('sHide').addEventListener('change', e => { company.hideName = e.target.checked; settingsChanged(); });
+
+  $('btnLogo').addEventListener('click', ()=> $('logoFile').click());
+  $('logoFile').addEventListener('change', async e => {
+    const f = e.target.files[0]; e.target.value = '';
+    if (!f) return;
+    try{
+      const next = await prepLogo(f);
+      const ok = await Store.set(K_LOGO, next);
+      if (!ok && Store.mode !== 'memory'){ toast('That logo is too large to store on this device', true); return; }
+      logo = next; renderLogoBox(); renderAll();
+      toast('Logo added to your invoices');
+    }catch(err){ console.error(err); toast('That image could not be used — try a PNG or JPG', true); }
+  });
+  $('btnLogoRm').addEventListener('click', async ()=>{
+    if (!confirm('Remove the logo from your invoices?')) return;
+    logo = null; await Store.set(K_LOGO, null);
+    renderLogoBox(); renderAll(); toast('Logo removed');
   });
 }
 
@@ -1158,23 +1655,32 @@ function renderSettings(){
    14. BOOT
    ========================================================================= */
 (async function init(){
-  const [c,p,h] = await Promise.all([Store.get(K_CO), Store.get(K_PROJ), Store.get(K_HIST)]);
+  const [c,p,h,lg,dr] = await Promise.all([Store.get(K_CO), Store.get(K_PROJ), Store.get(K_HIST),
+                                           Store.get(K_LOGO), Store.get(K_DRAFT)]);
   if (c) company = Object.assign(company, c);
   if (p) projects = p;
   if (h) history = h;
+  if (lg && lg.src) logo = lg;
 
-  cur = blankInvoice();
-  if (projects.length) loadProject(projects[0]);
+  if (dr && dr.cur){
+    // pick up exactly where you left off
+    cur = normalize(dr.cur);
+    editingId = dr.editingId && history.some(x=>x.id===dr.editingId) ? dr.editingId : null;
+    dirty = !!dr.dirty;
+  } else {
+    cur = blankInvoice();
+    if (projects.length) loadProject(projects[0]);
+  }
   renderForm(); renderAll();
   scheduleBuild(0);
 
   let w = '';
   if (typeof ExcelJS === 'undefined')
-    w += '<div class="warn">The Excel engine did not load, so <b>Share</b> and <b>Save file</b> need an internet connection. Print still works.</div>';
+    w += '<div class="warn">The Excel engine did not load, so <b>Send</b> and <b>Save file</b> need an internet connection. Print still works.</div>';
   if (Store.mode === 'memory')
     w += '<div class="warn">This browser is blocking storage, so projects will not be remembered after you close the tab. Use <b>Save backup file</b> under Projects.</div>';
   if (!canShareFiles(new File([''],'t.xlsx',{type:XLSX_MIME})))
-    w += '<div class="warn">This browser has no share sheet, so <b>Share</b> will save the invoice to your files instead. Open this page in Safari on your iPad to share it straight to Mail, Messages or anywhere else.</div>';
+    w += '<div class="warn">This browser has no share sheet, so <b>Send</b> will save the invoice to your files instead. Open this page in Safari on your iPad to send it straight to Mail, Messages or anywhere else.</div>';
   $('warnings').innerHTML = w;
 })();
 </script>
