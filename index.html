@@ -65,7 +65,6 @@ button{touch-action:manipulation}
 body.v-invoice  #paneInvoice{display:block}
 body.v-preview  #panePreview{display:block}
 body.v-projects #paneProjects{display:block}
-body.v-saved    #paneSaved{display:block}
 body.v-settings #paneSettings{display:block}
 
 /* ============ cards / steps ============ */
@@ -245,14 +244,12 @@ input:focus,select:focus,textarea:focus{border-color:var(--steel); box-shadow:0 
 .s-co td.nc{color:var(--muted); font-size:11px}
 .s-co .ni{display:none; color:var(--muted); font-size:10.5px; margin-top:2px}
 .s-co tr.tot td{border-top:1.5px solid var(--ink); border-bottom:0; font-weight:700}
-.s-bottom{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.5fr); gap:28px; margin-top:24px; align-items:start}
+.s-sum{width:60%; margin:24px 0 0 auto}
 .s-sum td:first-child{white-space:nowrap}
 @container (max-width:640px){
-  .s-bottom{grid-template-columns:1fr; gap:18px}
-  .s-notes{order:2}
+  .s-sum{width:100%}
   .s-sum td:first-child{white-space:normal}
 }
-.s-notes p{margin:0; white-space:pre-line; color:#374151; font-size:11.5px}
 .s-sum table{width:100%; border-collapse:collapse}
 .s-sum td{padding:5px 8px; border-bottom:1px solid var(--rule-soft)}
 .s-sum td.r{text-align:right; white-space:nowrap; font-variant-numeric:tabular-nums}
@@ -296,6 +293,64 @@ input:focus,select:focus,textarea:focus{border-color:var(--steel); box-shadow:0 
 .check input{width:24px; height:24px; min-height:0; accent-color:var(--steel); flex:none}
 .saved-ok{color:#047857; font-size:12.5px; font-weight:600}
 
+/* ============ project hub ============ */
+.seg{display:flex; background:#e2e5ea; border-radius:11px; padding:3px; margin-bottom:12px}
+.seg button{flex:1; border:0; background:transparent; min-height:40px; border-radius:9px; font-size:14.5px;
+  font-weight:500; color:var(--slate); cursor:pointer}
+.seg button.on{background:#fff; color:var(--ink); font-weight:600; box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.tools{display:flex; gap:9px; margin-bottom:12px}
+.tools input{flex:1; min-width:0}
+.tools .btn{flex:none}
+.pcard{display:block; width:100%; text-align:left; background:var(--paper); border:1px solid var(--rule);
+  border-radius:12px; padding:14px 16px; margin-bottom:10px; cursor:pointer; color:inherit; font:inherit}
+.pcard:active{background:#f6f7f9}
+.pcard:focus-visible{outline:3px solid rgba(44,82,130,.5); outline-offset:2px}
+.pc-top{display:flex; align-items:center; gap:8px}
+.pc-top b{font-size:16.5px; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.pc-top .go{color:var(--muted); font-size:24px; line-height:1; margin-left:2px}
+.pc-sub{display:block; color:var(--muted); font-size:13px; margin:1px 0 11px; overflow:hidden;
+  text-overflow:ellipsis; white-space:nowrap}
+.bar{display:block; height:8px; background:#e5e7eb; border-radius:99px; overflow:hidden}
+.bar i{display:block; height:100%; background:var(--steel); border-radius:99px}
+.pc-nums{display:flex; justify-content:space-between; gap:10px; font-size:13px; margin-top:7px; color:var(--slate)}
+.pc-nums b{color:var(--ink)}
+.chip.unsent{background:#fef3c7; color:#92400e}
+.chip.cur{background:var(--accent-tint); color:var(--steel)}
+details.done{margin-top:6px}
+details.done summary{cursor:pointer; color:var(--muted); font-weight:600; font-size:14px; padding:12px 2px; list-style-position:inside}
+.link{border:0; background:none; color:var(--steel); font-weight:600; padding:4px 0; cursor:pointer; font-size:inherit}
+.back{border:0; background:transparent; color:var(--steel); font-weight:600; font-size:15.5px; padding:6px 0;
+  min-height:42px; cursor:pointer; margin-bottom:2px}
+.pd-top{display:flex; gap:12px; align-items:flex-start; justify-content:space-between}
+.pd-name{font-size:21px; font-weight:700; margin:0 0 3px; line-height:1.2}
+.pd-sub{margin:0; color:var(--muted); font-size:13.5px; white-space:pre-line}
+.kpis{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; margin:15px 0 14px}
+@container (min-width:600px){ .kpis{grid-template-columns:repeat(4,minmax(0,1fr))} }
+.kpis div{background:#f5f6f8; border-radius:9px; padding:10px 11px; min-width:0}
+.kpis em{display:block; font-style:normal; font-size:11.5px; color:var(--muted)}
+.kpis b{display:block; font-size:16px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.pd-prog{display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; font-size:13px; color:var(--muted);
+  margin:7px 0 14px}
+.pd-prog b{color:var(--ink)}
+.pd-top + .kpis{margin-top:15px}
+.irow{padding:14px 0; border-top:1px solid var(--rule)}
+.irow:first-child{border-top:0; padding-top:2px}
+.irow.draft{background:var(--accent-tint); margin:0 -16px; padding:12px 16px; border-top:0}
+.irow.draft:first-child{margin-top:-14px; padding-top:12px}
+.ir-top{display:flex; align-items:center; gap:4px 6px; flex-wrap:wrap}
+.ir-top b{font-size:16px; margin-right:2px}
+.ir-top .chip{margin-left:0}
+.ir-top .amt{margin-left:auto; font-weight:700; font-size:16px; font-variant-numeric:tabular-nums; white-space:nowrap}
+.ir-meta{display:block; color:var(--muted); font-size:13px; margin:3px 0 10px}
+.irow.draft .ir-meta{margin-bottom:0}
+.ir-act,.ir-more{display:flex; gap:7px}
+.ir-act .btn,.ir-more .btn{flex:1; min-width:0; min-height:40px; padding:7px 6px; font-size:13.5px}
+.ir-act .btn.more{flex:0 0 46px; letter-spacing:1px; color:var(--muted)}
+.ir-more{margin-top:7px}
+.subhead{font-size:13px; font-weight:700; color:var(--slate); text-transform:uppercase; letter-spacing:.06em;
+  margin:6px 0 10px; padding-top:14px; border-top:1px solid var(--rule)}
+.projsum .link{font-size:12.5px; padding:3px 0 0}
+
 .toast{
   position:fixed; left:50%; transform:translateX(-50%);
   bottom:calc(var(--bar) + var(--tabs) + 14px); z-index:60; max-width:92vw;
@@ -319,12 +374,13 @@ input:focus,select:focus,textarea:focus{border-color:var(--steel); box-shadow:0 
     align-items:start; padding-bottom:calc(var(--bar) + 18px)}
   body.v-invoice #panePreview,body.v-preview #paneInvoice{display:block}
   body.v-invoice #panePreview,body.v-preview #panePreview{position:sticky; top:88px}
-  body.v-projects .panes,body.v-settings .panes,body.v-saved .panes{display:block; max-width:900px}
+  body.v-projects .panes,body.v-settings .panes{display:block; max-width:900px}
+  .phone-only{display:none !important}
 }
 
 /* ============ print ============ */
 @media print{
-  .appbar,.actionbar,.tabbar,.toast,#paneInvoice,#paneProjects,#paneSettings,#paneSaved{
+  .appbar,.actionbar,.tabbar,.toast,#paneInvoice,#paneProjects,#paneSettings{
     display:none !important}
   body{background:#fff}
   .panes{padding:0 !important; display:block !important; max-width:none}
@@ -347,7 +403,6 @@ input:focus,select:focus,textarea:focus{border-color:var(--steel); box-shadow:0 
       <button data-v="invoice" class="on">Invoice</button>
       <button data-v="preview">Preview</button>
       <button data-v="projects">Projects</button>
-      <button data-v="saved">Saved</button>
       <button data-v="settings">Settings</button>
     </nav>
   </div>
@@ -364,7 +419,8 @@ input:focus,select:focus,textarea:focus{border-color:var(--steel); box-shadow:0 
         <label class="field"><span>Project</span><select id="projPick"></select></label>
 
         <div class="projsum" id="projSum" hidden>
-          <div class="m"><b id="psName"></b><small id="psLine"></small></div>
+          <div class="m"><b id="psName"></b><small id="psLine"></small>
+            <button type="button" class="link" id="btnProjPage">All invoices for this project ›</button></div>
           <button class="btn sm" type="button" id="btnProjToggle">Edit details</button>
         </div>
 
@@ -441,9 +497,8 @@ input:focus,select:focus,textarea:focus{border-color:var(--steel); box-shadow:0 
     </section>
 
     <section class="step">
-      <h2 data-n="4">Notes and terms</h2>
+      <h2 data-n="4">Save and send</h2>
       <div class="body">
-        <label class="field"><span>Printed at the bottom of the invoice</span><textarea id="iNotes"></textarea></label>
         <div class="btnrow">
           <button class="btn" type="button" id="btnSave">Save invoice</button>
           <button class="btn" type="button" id="btnEmail">Email draft</button>
@@ -459,7 +514,6 @@ input:focus,select:focus,textarea:focus{border-color:var(--steel); box-shadow:0 
   </section>
 
   <section class="pane" id="paneProjects"></section>
-  <section class="pane" id="paneSaved"></section>
   <section class="pane" id="paneSettings"></section>
 </main>
 
@@ -476,7 +530,6 @@ input:focus,select:focus,textarea:focus{border-color:var(--steel); box-shadow:0 
   <button data-v="invoice" class="on"><svg viewBox="0 0 24 24"><path d="M5 3h9l5 5v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M14 3v5h5M8 13h8M8 17h5"/></svg>Invoice</button>
   <button data-v="preview"><svg viewBox="0 0 24 24"><path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6-10-6-10-6z"/><circle cx="12" cy="12" r="2.6"/></svg>Preview</button>
   <button data-v="projects"><svg viewBox="0 0 24 24"><path d="M3 7h6l2 2h10v10a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/></svg>Projects</button>
-  <button data-v="saved"><svg viewBox="0 0 24 24"><path d="M4 3h16v18l-8-4-8 4z"/></svg>Saved</button>
   <button data-v="settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>Settings</button>
 </nav>
 
@@ -518,8 +571,7 @@ const K_CO='inv:company', K_PROJ='inv:projects', K_HIST='inv:invoices',
    ========================================================================= */
 let company = {
   name:'A STEEL ERECTOR', street:'2121 Avenue C', cityline:'Grand Prairie, TX 75051',
-  phone:'214-554-8532', email:'', fromName:'', showCents:true, hideName:false,
-  defaultNotes:'Payment terms: Net 30. Make checks payable to A Steel Erector, 2121 Avenue C, Grand Prairie, TX 75051.'
+  phone:'214-554-8532', email:'', fromName:'', showCents:true, hideName:false
 };
 let logo = null;                 // { src: dataURL, w, h }
 let projects = [], history = [], cur = null, editingId = null;
@@ -783,8 +835,7 @@ function buildWorkbook(inv){
     hgt(r, 16); r++;
   }
 
-  /* ---- notes (left) + summary (right) ---------------------------------- */
-  label('B'+r+':C'+r, 'NOTES & TERMS');
+  /* ---- summary (right side) -------------------------------------------- */
   label('E'+r+':G'+r, 'SUMMARY');
   r++;
   hgt(r, 5); r++;
@@ -794,9 +845,7 @@ function buildWorkbook(inv){
   const G = k => 'G' + R[k];
   const tRow = R.retDate + 2;
 
-  const notes = txt(inv.notes);
-  const needH = linesOf(notes, 50) * 12.5 + 8;
-  const rowH  = Math.max(18, (needH - 6 - 26) / 11);
+  const rowH = 18;
 
   [
     ['origPO',     'Original Purchase Order Amount',  vOrigPO, ''],
@@ -833,10 +882,6 @@ function buildWorkbook(inv){
     { font:{bold:true, size:12, color:{argb:X.WHITE}}, fmt:MF, align:{horizontal:'right', indent:1} });
   hgt(tRow, 26);
 
-  merge('B'+S+':C'+tRow);
-  set('B'+S, notes, { font:{size:9.5, color:{argb:X.SUB}},
-    align:{horizontal:'left', vertical:'top', wrapText:true, indent:1} });
-
   ws.pageSetup.printArea = 'A1:H' + (tRow + 1);
   hgt(tRow + 1, 8);
   return wb;
@@ -849,8 +894,7 @@ const toExcelPayload = inv => ({
   project:{ name:inv.projName, address:inv.projAddr, po:inv.projPo },
   billTo: inv.billTo, changeOrders: inv.changeOrders, workItems: inv.workItems,
   originalPO: inv.originalPO, percentComplete: inv.percentComplete,
-  previousPayments: inv.previousPayments, retainageRate: inv.retainageRate,
-  notes: inv.notes
+  previousPayments: inv.previousPayments, retainageRate: inv.retainageRate
 });
 
 const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
@@ -895,12 +939,12 @@ const blankInvoice = () => ({
   date: todayISO(), periodEnding: endOfMonthISO(),
   invoiceNo:1, paymentRequestNo:1,
   originalPO:0, percentComplete:0, previousPayments:0, retainageRate:0,
-  workItems:[], changeOrders:[],
-  notes: company.defaultNotes
+  workItems:[], changeOrders:[]
 });
 /* Fill in anything an older saved invoice or draft is missing, and drop empty rows. */
 function normalize(inv){
   const o = Object.assign(blankInvoice(), inv || {});
+  delete o.notes;                        // older invoices had a Notes & Terms field; no longer used
   o.changeOrders = (Array.isArray(o.changeOrders) ? o.changeOrders : []).filter(coKeep)
     .map(c => Object.assign(blankCO(), c));
   o.workItems = (Array.isArray(o.workItems) ? o.workItems : []).filter(workShows)
@@ -915,8 +959,7 @@ function loadProject(p){
     previousPayments:p.previousPayments||0, percentComplete:p.lastPercent||0,
     invoiceNo:p.nextInvoiceNo||1, paymentRequestNo:p.nextInvoiceNo||1,
     changeOrders:(p.changeOrders||[]).filter(coKeep).map(c=>Object.assign(blankCO(), c)),
-    workItems:(p.workItems||[]).filter(workShows).map(w=>({desc:w.desc})),
-    notes:p.notes||company.defaultNotes
+    workItems:(p.workItems||[]).filter(workShows).map(w=>({desc:w.desc}))
   });
 }
 
@@ -925,8 +968,9 @@ function loadProject(p){
    ========================================================================= */
 function fillPicker(){
   const sel = $('projPick');
+  const order = projects.filter(p=>!p.archived).concat(projects.filter(p=>p.archived));
   sel.innerHTML = '<option value="">— Not saved yet —</option>' +
-    projects.map(p=>`<option value="${p.id}">${esc(p.name||'Untitled')}</option>`).join('') +
+    order.map(p=>`<option value="${p.id}">${esc(p.name||'Untitled')}${p.archived?' (finished)':''}</option>`).join('') +
     '<option value="__new">+ Start a new project</option>';
   sel.value = projects.some(p=>p.id===cur.projectId) ? cur.projectId : '';
 }
@@ -947,7 +991,6 @@ function renderForm(){
   $('origPO').value = cur.originalPO ? Number(cur.originalPO).toLocaleString('en-US') : '';
   $('retRate').value = cur.retainageRate;
   $('prevPay').value = cur.previousPayments ? Number(cur.previousPayments).toLocaleString('en-US') : '';
-  $('iNotes').value = cur.notes;
   renderWorkRows(); renderCoRows();
   setProjOpen(false);
   const p = projects.find(x=>x.id===cur.projectId);
@@ -1082,12 +1125,9 @@ function sheetHTML(c){
       </div>
       ${workHTML}
       ${coHTML}
-      <div class="s-bottom">
-        <div class="s-notes"><h3 class="s-label">Notes &amp; terms</h3><p>${esc(cur.notes)}</p></div>
-        <div class="s-sum"><h3 class="s-label">Summary</h3>
-          <table>${sum}</table>
-          <div class="s-total"><span>TOTAL DUE THIS INVOICE</span><b>${money(c.currentDue)}</b></div>
-        </div>
+      <div class="s-sum"><h3 class="s-label">Summary</h3>
+        <table>${sum}</table>
+        <div class="s-total"><span>TOTAL DUE THIS INVOICE</span><b>${money(c.currentDue)}</b></div>
       </div>
     </div>`;
 }
@@ -1149,7 +1189,6 @@ bindText('pName','projName'); bindText('pPo','projPo'); bindText('pAddr','projAd
 bindText('pBill','billTo');   bindText('pEmail','custEmail');
 bindText('iPr','paymentRequestNo');
 bindText('iDate','date');     bindText('iPeriod','periodEnding');
-bindText('iNotes','notes');
 bindNum('origPO','originalPO'); bindNum('prevPay','previousPayments');
 /* Payment request # follows the invoice # unless you've set it to something different. */
 $('iNo').addEventListener('input', e => {
@@ -1168,6 +1207,9 @@ $('pctRange').addEventListener('input', e => {
   $('pct').value = cur.percentComplete; edited();
 });
 $('btnProjToggle').addEventListener('click', ()=> setProjOpen(!projOpen));
+$('btnProjPage').addEventListener('click', ()=>{
+  hub.view = 'detail'; hub.id = cur.projectId; showPane('projects');
+});
 
 /* --- work descriptions --- */
 $('workBody').addEventListener('input', e => {
@@ -1279,7 +1321,6 @@ function syncProject(){
     originalPO:n(cur.originalPO), retainageRate:n(cur.retainageRate),
     changeOrders:cur.changeOrders.filter(coKeep).map(x=>({...x})),
     workItems:cur.workItems.filter(workShows).map(x=>({desc:x.desc})),
-    notes:cur.notes,
     lastPercent:n(cur.percentComplete), lastInvoiceNo:cur.invoiceNo,
     previousPayments:+c.grossToDate.toFixed(2),
     nextInvoiceNo:(parseInt(cur.invoiceNo,10)||0)+1
@@ -1394,11 +1435,11 @@ $('btnNew').addEventListener('click', ()=>{
    12. NAVIGATION
    ========================================================================= */
 function showPane(v){
+  const was = document.body.className;
   document.body.className = 'v-'+v;
   document.querySelectorAll('.tabbar button,.wide-nav button')
     .forEach(b=> b.classList.toggle('on', b.dataset.v===v));
-  if (v==='projects') renderProjects();
-  if (v==='saved') renderSaved();
+  if (v==='projects'){ if (was === 'v-projects') hub.view = 'list'; renderHub(); }
   if (v==='settings') renderSettings();
   if (v==='invoice') requestAnimationFrame(growAll);
   window.scrollTo(0,0);
@@ -1407,114 +1448,354 @@ document.querySelectorAll('.tabbar button,.wide-nav button')
   .forEach(b=> b.addEventListener('click', ()=> showPane(b.dataset.v)));
 
 /* =========================================================================
-   13. PROJECTS / SAVED / SETTINGS
+   13. PROJECTS HUB — projects → one project → its invoices
    ========================================================================= */
-function renderProjects(){
-  $('paneProjects').innerHTML = `
-    <div class="card"><h2>Projects</h2><div class="body">
-      <p class="hint" style="margin:0 0 10px">Each project remembers its purchase order, work descriptions, change orders, retainage and how much you have billed.</p>
-      ${projects.length ? projects.map(p=>`
-        <div class="rowitem"><div class="main">
-          <b>${esc(p.name)}</b>
-          <small>${esc((p.billTo||'').split('\n')[0])} · PO ${money0(p.originalPO)} · billed ${money(p.previousPayments||0)} · next #${esc(p.nextInvoiceNo||1)}</small>
-        </div>
-        <button class="btn primary" data-use="${p.id}">Next invoice</button>
-        <button class="btn danger" data-rm="${p.id}">Delete</button></div>`).join('')
-        : '<div class="empty">No projects yet. Start one on the Invoice tab.</div>'}
-    </div></div>
-    <div class="card"><h2>Backup</h2><div class="body">
-      <p class="hint" style="margin:0 0 10px">Your data lives on this device. Save a backup now and then, or to move to another iPad or computer.</p>
-      <button class="btn wide" id="btnBackup">Save backup file</button>
-      <button class="btn wide" id="btnRestore">Restore from backup</button>
-      <input type="file" id="restoreFile" accept="application/json,.json" style="display:none">
-    </div></div>`;
-  $('paneProjects').querySelectorAll('[data-use]').forEach(b=> b.addEventListener('click', ()=>{
-    if (!okToLeave()) return;
-    cur = blankInvoice();
-    loadProject(projects.find(x=>x.id===b.dataset.use));
-    startFrom(cur, null, false); showPane('invoice');
-  }));
-  $('paneProjects').querySelectorAll('[data-rm]').forEach(b=> b.addEventListener('click', async ()=>{
-    const p = projects.find(x=>x.id===b.dataset.rm);
-    if (!confirm('Delete "'+p.name+'"? Saved invoices are kept.')) return;
-    projects = projects.filter(x=>x.id!==p.id);
-    await Store.set(K_PROJ, projects);
-    renderProjects(); fillPicker(); setProjOpen(projOpen); toast('Project deleted');
-  }));
-  $('btnBackup').addEventListener('click', ()=>{
-    const f = new File([JSON.stringify({company,logo,projects,history},null,2)],
-      'invoice-backup-'+todayISO()+'.json', {type:'application/json'});
-    if (canShareFiles(f)) navigator.share({files:[f]}).catch(()=>downloadFile(f));
-    else downloadFile(f);
-  });
-  $('btnRestore').addEventListener('click', ()=> $('restoreFile').click());
-  $('restoreFile').addEventListener('change', e=>{
-    const f = e.target.files[0]; if(!f) return;
-    const r = new FileReader();
-    r.onload = async ()=>{
-      try{
-        const d = JSON.parse(r.result);
-        if (d.company) company = Object.assign(company, d.company);
-        if (d.logo !== undefined) logo = d.logo;
-        if (d.projects) projects = d.projects;
-        if (d.history) history = d.history;
-        await Store.set(K_CO,company); await Store.set(K_LOGO,logo);
-        await Store.set(K_PROJ,projects); await Store.set(K_HIST,history);
-        renderProjects(); fillPicker(); setProjOpen(projOpen); renderAll(); toast('Backup restored');
-      }catch(err){ toast('That file could not be read', true); }
-    };
-    r.readAsText(f);
-  });
+let hub = { view:'list', id:null, q:'', iq:'' };   // view: list | all | detail | edit
+
+const invNum = h => parseInt(h.data.invoiceNo,10) || 0;
+const byNewest = (a,b) => invNum(b) - invNum(a) || String(b.savedAt).localeCompare(String(a.savedAt));
+const invsOf = id => history.filter(h => h.data.projectId === id).sort(byNewest);
+const sentChip = h => h.sentAt
+  ? `<span class="chip sent">Sent ${fmtDate(isoOf(new Date(h.sentAt)))}</span>`
+  : '<span class="chip unsent">Not sent</span>';
+
+function projStats(p){
+  const invs = invsOf(p.id);
+  const contract = n(p.originalPO) + (p.changeOrders||[]).reduce((s,c)=> s + n(c.billable), 0);
+  const billed = n(p.previousPayments);
+  const pct = p.lastInvoiceNo ? n(p.lastPercent) : (contract ? billed/contract*100 : 0);
+  return { invs, contract, billed, pct,
+           retHeld: billed * n(p.retainageRate)/100,      // same as "Retainage to Date" on the last invoice
+           left: contract - billed,
+           unsent: invs.filter(h=>!h.sentAt).length,
+           last: invs[0] || null };
+}
+const sortProjects = list => list.slice().sort((a,b)=>{
+  const la = invsOf(a.id)[0], lb = invsOf(b.id)[0];
+  return String(lb ? lb.savedAt : '').localeCompare(String(la ? la.savedAt : '')) ||
+         String(a.name).localeCompare(String(b.name));
+});
+/* The unsaved "next invoice" in the editor follows edits made on the project page. */
+function syncDraftWithProject(before, p){
+  if (!cur || editingId || cur.projectId !== p.id) return;
+  const s = v => v == null ? '' : String(v);
+  let changed = false;
+  [['name','projName'],['address','projAddr'],['po','projPo'],['billTo','billTo'],['email','custEmail'],
+   ['originalPO','originalPO'],['retainageRate','retainageRate'],['previousPayments','previousPayments']]
+  .forEach(([pk,ck])=>{ if (s(before[pk]) !== s(p[pk])){ cur[ck] = p[pk]; changed = true; } });
+  if (s(before.nextInvoiceNo) !== s(p.nextInvoiceNo)){
+    if (txt(cur.paymentRequestNo) === txt(cur.invoiceNo)) cur.paymentRequestNo = p.nextInvoiceNo;
+    cur.invoiceNo = p.nextInvoiceNo; changed = true;
+  }
+  if (changed){ renderForm(); renderAll(); }
+}
+function refreshEditorBits(){ fillPicker(); setProjOpen(projOpen); renderAll(); }
+
+function renderHub(){
+  if ((hub.view==='detail' || (hub.view==='edit' && hub.id)) && !projects.some(p=>p.id===hub.id)) hub.view = 'list';
+  if (hub.view==='detail') renderProjectPage();
+  else if (hub.view==='edit') renderProjectEdit();
+  else renderHubList();
 }
 
-let savedQuery = '';
-function renderSaved(){
-  $('paneSaved').innerHTML = `<div class="card"><h2>Saved invoices</h2><div class="body">
-    ${history.length > 4 ? `<label class="field" style="margin-bottom:6px"><span>Find</span>
-      <input type="search" id="savedQ" placeholder="Project or invoice #" value="${esc(savedQuery)}"></label>` : ''}
-    <div id="savedList"></div>
-  </div></div>`;
-  const q = $('savedQ');
-  if (q) q.addEventListener('input', e => { savedQuery = e.target.value; renderSavedList(); });
-  renderSavedList();
+/* ---- list of projects / all invoices ---- */
+function projectCard(p){
+  const s = projStats(p);
+  const line = [txt(p.billTo).split('\n')[0], p.po ? 'Job # '+p.po : ''].filter(Boolean).join(' · ');
+  return `<button type="button" class="pcard" data-act="proj" data-id="${p.id}">
+    <span class="pc-top"><b>${esc(p.name||'Untitled project')}</b>
+      ${s.unsent ? `<span class="chip unsent">${s.unsent} not sent</span>` : ''}<span class="go" aria-hidden="true">›</span></span>
+    <span class="pc-sub">${esc(line || 'No customer yet')}</span>
+    <span class="bar"><i style="width:${Math.max(0,Math.min(100,s.pct))}%"></i></span>
+    <span class="pc-nums"><span><b>${pctText(s.pct)}</b> · billed ${money0(s.billed)} of ${money0(s.contract)}</span>
+      <span>${s.invs.length} invoice${s.invs.length===1?'':'s'}</span></span>
+  </button>`;
 }
-function renderSavedList(){
-  const q = savedQuery.trim().toLowerCase();
-  const list = history.filter(h => !q || (String(h.data.projName)+' #'+h.data.invoiceNo).toLowerCase().includes(q));
-  $('savedList').innerHTML = list.length ? list.map(h=>`
-      <div class="rowitem"><div class="main">
-        <b>#${esc(h.data.invoiceNo)} — ${esc(h.data.projName)}${h.sentAt
-          ? `<span class="chip sent">Sent ${fmtDate(isoOf(new Date(h.sentAt)))}</span>` : '<span class="chip">Not sent</span>'}</b>
-        <small>Period ending ${fmtDate(h.data.periodEnding)} · ${money(h.currentDue)}</small>
+function invoiceRow(h, withProject){
+  const d = h.data, open = editingId === h.id;
+  const title = '#'+esc(d.invoiceNo) + (withProject ? ' · '+esc(d.projName||'Untitled') : '');
+  const gone = withProject && !projects.some(p=>p.id===d.projectId);
+  return `<div class="irow">
+    <div class="ir-top"><b>${title}</b>${sentChip(h)}${open ? '<span class="chip cur">Open now</span>' : ''}
+      ${gone ? '<span class="chip">Project deleted</span>' : ''}<span class="amt">${money(h.currentDue)}</span></div>
+    <span class="ir-meta">Period ending ${fmtDate(d.periodEnding)} · ${pctText(d.percentComplete)} complete · dated ${fmtDate(d.date)}</span>
+    <div class="ir-act">
+      <button type="button" class="btn" data-act="view" data-id="${h.id}">View</button>
+      <button type="button" class="btn phone-only" data-act="edit" data-id="${h.id}">Edit</button>
+      <button type="button" class="btn" data-act="sent" data-id="${h.id}">${h.sentAt ? 'Mark not sent' : 'Mark sent'}</button>
+      <button type="button" class="btn more" data-act="more" aria-expanded="false" aria-label="More actions">•••</button>
+    </div>
+    <div class="ir-more" hidden>
+      <button type="button" class="btn" data-act="copy" data-id="${h.id}">Duplicate as next invoice</button>
+      <button type="button" class="btn danger" data-act="delinv" data-id="${h.id}">Delete</button>
+    </div>
+  </div>`;
+}
+function renderHubList(){
+  const all = hub.view === 'all';
+  $('paneProjects').innerHTML = `
+    <div class="seg" role="tablist">
+      <button type="button" role="tab" data-act="tab" data-id="list" class="${all?'':'on'}">Projects</button>
+      <button type="button" role="tab" data-act="tab" data-id="all" class="${all?'on':''}">All invoices</button>
+    </div>
+    <div class="tools">
+      <input type="search" id="hubQ" placeholder="${all ? 'Search invoice #, project or customer' : 'Search projects'}"
+        value="${esc(all ? hub.iq : hub.q)}" aria-label="Search">
+      ${all ? '' : '<button type="button" class="btn primary" data-act="newproj">+ New project</button>'}
+    </div>
+    <div id="hubList"></div>`;
+  fillHubList();
+}
+function fillHubList(){
+  const box = $('hubList'); if (!box) return;
+  if (hub.view === 'all'){
+    const q = hub.iq.trim().toLowerCase();
+    const list = history.filter(h => !q || ['#'+h.data.invoiceNo, h.data.invoiceNo, h.data.projName, h.data.billTo]
+        .join(' ').toLowerCase().includes(q))
+      .sort((a,b)=> String(b.data.date).localeCompare(String(a.data.date)) || byNewest(a,b));
+    box.innerHTML = list.length
+      ? `<div class="card"><div class="body">${list.map(h=>invoiceRow(h, true)).join('')}</div></div>`
+      : `<div class="empty">${history.length ? 'No invoices match.' : 'No saved invoices yet. They show up here once you save or send one.'}</div>`;
+    return;
+  }
+  const q = hub.q.trim().toLowerCase();
+  const match = p => !q || [p.name, p.billTo, p.po, p.address].join(' ').toLowerCase().includes(q);
+  const active = sortProjects(projects.filter(p => !p.archived && match(p)));
+  const done   = sortProjects(projects.filter(p =>  p.archived && match(p)));
+  const orphans = history.filter(h => !projects.some(p=>p.id===h.data.projectId)).length;
+  let html = active.map(projectCard).join('');
+  if (!projects.length) html = `<div class="empty">No projects yet.<br>Tap <b>+ New project</b>, or save an invoice and its project is created for you.</div>`;
+  else if (!active.length && !done.length) html = '<div class="empty">No projects match.</div>';
+  else if (!active.length) html = '<div class="empty">No active projects.</div>';
+  if (done.length) html += `<details class="done" ${q ? 'open' : ''}><summary>Finished projects (${done.length})</summary>${done.map(projectCard).join('')}</details>`;
+  if (orphans && !q) html += `<p class="hint" style="text-align:center">${orphans} saved invoice${orphans===1?' belongs':'s belong'} to deleted projects —
+    <button type="button" class="link" data-act="tab" data-id="all">see All invoices</button></p>`;
+  box.innerHTML = html;
+}
+$('paneProjects').addEventListener('input', e => {
+  if (e.target.id !== 'hubQ') return;
+  if (hub.view === 'all') hub.iq = e.target.value; else hub.q = e.target.value;
+  fillHubList();
+});
+
+/* ---- one project ---- */
+function renderProjectPage(){
+  const p = projects.find(x=>x.id===hub.id);
+  const s = projStats(p);
+  const draftHere = !editingId && cur.projectId === p.id && dirty;
+  const nextLabel = draftHere ? 'Continue invoice #'+esc(cur.invoiceNo) : 'New invoice #'+esc(p.nextInvoiceNo||1);
+  const sub = [txt(p.billTo).split('\n')[0], p.address, p.po ? 'PO / Job # '+p.po : '', p.email]
+    .filter(Boolean).map(esc).join('\n');
+  $('paneProjects').innerHTML = `
+    <button type="button" class="back" data-act="back">‹ All projects</button>
+    <div class="card"><div class="body">
+      <div class="pd-top">
+        <div style="min-width:0"><h2 class="pd-name">${esc(p.name||'Untitled project')}${p.archived ? ' <span class="chip">Finished</span>' : ''}</h2>
+          <p class="pd-sub">${sub || 'No customer details yet'}</p></div>
+        <button type="button" class="btn sm" data-act="editproj" data-id="${p.id}">Edit</button>
       </div>
-      <button class="btn" data-open="${h.id}">Open</button>
-      <button class="btn" data-copy="${h.id}">Duplicate</button>
-      <button class="btn danger" data-del="${h.id}">Delete</button></div>`).join('')
-    : `<div class="empty">${history.length ? 'Nothing matches.' : 'No saved invoices yet.'}</div>`;
-  const box = $('savedList');
-  box.querySelectorAll('[data-open]').forEach(b=> b.addEventListener('click', ()=>{
+      <div class="kpis">
+        <div><em>Contract incl. change orders</em><b class="num">${money(s.contract)}</b></div>
+        <div><em>Billed to date</em><b class="num">${money(s.billed)}</b></div>
+        <div><em>Retainage held</em><b class="num">${money(s.retHeld)}</b></div>
+        <div><em>Left to bill</em><b class="num">${money(s.left)}</b></div>
+      </div>
+      <span class="bar"><i style="width:${Math.max(0,Math.min(100,s.pct))}%"></i></span>
+      <p class="pd-prog"><span><b>${pctText(s.pct)}</b> complete</span>
+        <span>${s.last ? 'Last: #'+esc(s.last.data.invoiceNo)+' on '+fmtDate(s.last.data.date) : 'No invoices yet'}</span></p>
+      <button type="button" class="btn primary wide" data-act="nextinv" data-id="${p.id}">${nextLabel}</button>
+    </div></div>
+
+    <div class="card"><h2>Invoices <span class="aside">${s.invs.length ? s.invs.length + ' saved' + (s.unsent ? ' · '+s.unsent+' not sent' : '') : ''}</span></h2>
+      <div class="body">
+        ${draftHere ? `<div class="irow draft"><div class="ir-top"><b>#${esc(cur.invoiceNo)}</b><span class="chip cur">In progress — not saved</span>
+          <span class="amt">${money(calc(cur).currentDue)}</span></div>
+          <span class="ir-meta">Period ending ${fmtDate(cur.periodEnding)} · ${pctText(cur.percentComplete)} complete</span></div>` : ''}
+        ${s.invs.length ? s.invs.map(h=>invoiceRow(h,false)).join('')
+          : (draftHere ? '' : '<div class="empty" style="padding:14px 4px">No saved invoices for this project yet.</div>')}
+      </div></div>
+
+    <div class="btnrow" style="margin-top:4px">
+      <button type="button" class="btn" data-act="archive" data-id="${p.id}">${p.archived ? 'Move back to active' : 'Mark project finished'}</button>
+      <button type="button" class="btn danger" data-act="delproj" data-id="${p.id}">Delete project</button>
+    </div>
+    <p class="hint">Finished projects move to the bottom of the list and keep all their invoices.</p>`;
+}
+
+/* ---- add / edit a project ---- */
+function renderProjectEdit(){
+  const p = projects.find(x=>x.id===hub.id) || null;
+  const v = (k, d) => esc(p && p[k] != null ? p[k] : (d == null ? '' : d));
+  const numv = k => p && n(p[k]) ? Number(p[k]).toLocaleString('en-US',{maximumFractionDigits:2}) : '';
+  $('paneProjects').innerHTML = `
+    <button type="button" class="back" data-act="back">‹ ${p ? esc(p.name||'Project') : 'All projects'}</button>
+    <div class="card"><h2>${p ? 'Edit project' : 'New project'}</h2><div class="body">
+      <div class="g2">
+        <label class="field"><span>Project name</span><input type="text" id="epName" value="${v('name')}" placeholder="NWPF"></label>
+        <label class="field"><span>Customer PO / job #</span><input type="text" id="epPo" value="${v('po')}" placeholder="optional"></label>
+      </div>
+      <label class="field"><span>Job site address</span><input type="text" id="epAddr" value="${v('address')}" placeholder="optional"></label>
+      <label class="field"><span>Bill to</span><textarea id="epBill" placeholder="Customer name&#10;Street address&#10;City, State ZIP">${v('billTo')}</textarea></label>
+      <label class="field"><span>Customer email</span><input type="email" id="epEmail" inputmode="email" autocapitalize="off" autocorrect="off" value="${v('email')}"></label>
+      <div class="g2">
+        <label class="field"><span>Original purchase order</span><input type="text" id="epOrig" class="num" inputmode="decimal" value="${numv('originalPO')}" placeholder="0"></label>
+        <label class="field"><span>Retainage rate (%)</span><input type="text" id="epRet" class="num" inputmode="decimal" value="${v('retainageRate', 0)}"></label>
+      </div>
+      <h3 class="subhead">Billing so far</h3>
+      <div class="g2">
+        <label class="field"><span>Billed to date</span><input type="text" id="epBilled" class="num" inputmode="decimal" value="${numv('previousPayments')}" placeholder="0"></label>
+        <label class="field"><span>Next invoice #</span><input type="text" id="epNext" class="num" inputmode="numeric" value="${v('nextInvoiceNo', 1)}"></label>
+      </div>
+      <p class="hint" style="margin-top:-6px">These fill in by themselves each time you save an invoice. Set them here if the job was already billed before you started using the app, or to fix a mistake. Saved invoices are not changed.</p>
+      <div class="btnrow" style="margin-top:14px">
+        <button type="button" class="btn primary" data-act="saveproj">${p ? 'Save changes' : 'Add project'}</button>
+        <button type="button" class="btn" data-act="back">Cancel</button>
+      </div>
+    </div></div>`;
+  if (!p) $('epName').focus();
+}
+async function saveProjectForm(){
+  const val = id => $(id).value;
+  const name = txt(val('epName'));
+  if (!name){ toast('Give the project a name', true); $('epName').focus(); return; }
+  let p = projects.find(x=>x.id===hub.id);
+  const before = p ? clone(p) : null;
+  if (!p){ p = { id: uid(), changeOrders:[], workItems:[], lastPercent:0, lastInvoiceNo:'' }; projects.push(p); }
+  Object.assign(p, {
+    name, po: txt(val('epPo')), address: txt(val('epAddr')), billTo: val('epBill').trim(), email: txt(val('epEmail')),
+    originalPO: n(val('epOrig')), retainageRate: n(val('epRet')),
+    previousPayments: n(val('epBilled')), nextInvoiceNo: parseInt(val('epNext'),10) || 1
+  });
+  await Store.set(K_PROJ, projects);
+  if (before) syncDraftWithProject(before, p);
+  refreshEditorBits();
+  hub.view = 'detail'; hub.id = p.id; renderHub(); window.scrollTo(0,0);
+  toast(before ? 'Project updated' : 'Project added');
+}
+
+/* ---- invoice actions ---- */
+function openInvoice(h, pane){
+  if (editingId !== h.id){
     if (!okToLeave()) return;
-    const h = history.find(x=>x.id===b.dataset.open);
-    startFrom(normalize(clone(h.data)), h.id, false); showPane('invoice');
-  }));
-  box.querySelectorAll('[data-copy]').forEach(b=> b.addEventListener('click', ()=>{
-    if (!okToLeave()) return;
-    const h = history.find(x=>x.id===b.dataset.copy);
-    const inv = normalize(clone(h.data));
-    inv.invoiceNo = (parseInt(inv.invoiceNo,10)||0)+1;
-    inv.paymentRequestNo = inv.invoiceNo;
-    inv.date = todayISO(); inv.periodEnding = endOfMonthISO();
-    startFrom(inv, null, true); showPane('invoice');
-    toast('Copied to invoice #'+inv.invoiceNo);
-  }));
-  box.querySelectorAll('[data-del]').forEach(b=> b.addEventListener('click', async ()=>{
-    const h = history.find(x=>x.id===b.dataset.del);
-    if (!confirm('Delete saved invoice #'+h.data.invoiceNo+' for '+h.data.projName+'? Project totals are not changed.')) return;
-    history = history.filter(x=>x.id!==h.id);
-    if (editingId === h.id){ editingId = null; dirty = true; renderAll(); }
-    await Store.set(K_HIST, history);
-    renderSavedList(); toast('Saved invoice deleted');
-  }));
+    startFrom(normalize(clone(h.data)), h.id, false);
+  }
+  showPane(pane);
+}
+function startNextInvoice(p){
+  if (!editingId && cur.projectId === p.id && dirty){ showPane('invoice'); return; }
+  if (!okToLeave()) return;
+  cur = blankInvoice(); loadProject(p); startFrom(cur, null, false);
+  showPane('invoice');
+}
+function duplicateInvoice(h){
+  if (!okToLeave()) return;
+  const inv = normalize(clone(h.data));
+  const p = projects.find(x=>x.id===inv.projectId);
+  inv.invoiceNo = p && p.nextInvoiceNo ? p.nextInvoiceNo : (parseInt(inv.invoiceNo,10)||0)+1;
+  inv.paymentRequestNo = inv.invoiceNo;
+  inv.date = todayISO(); inv.periodEnding = endOfMonthISO();
+  startFrom(inv, null, true); showPane('invoice');
+  toast('Copied to invoice #'+inv.invoiceNo);
+}
+/* Deleting a project's latest invoice puts the project back where it was before that invoice,
+   so the next one reuses the number and bills from the right starting point.
+   Deleting an older invoice leaves the project's totals alone. */
+async function deleteInvoice(h){
+  const p = projects.find(x=>x.id===h.data.projectId);
+  const others = p ? history.filter(x=>x.id!==h.id && x.data.projectId===p.id) : [];
+  const num = invNum(h);
+  const isLatest = !!p && num > 0 && txt(p.lastInvoiceNo) === txt(h.data.invoiceNo) && !others.some(x=>invNum(x) >= num);
+  let msg = 'Delete invoice #'+h.data.invoiceNo+' for '+(h.data.projName||'this project')+'?';
+  msg += isLatest
+    ? '\n\nThe project goes back to where it was before #'+h.data.invoiceNo+': billed to date '+
+      money(h.data.previousPayments)+', next invoice #'+h.data.invoiceNo+'.'
+    : '\n\nProject totals are not changed.';
+  if (!confirm(msg)) return;
+  const wasOpen = editingId === h.id;
+  history = history.filter(x=>x.id!==h.id);
+  if (isLatest){
+    const before = clone(p);
+    const earlier = others.slice().sort(byNewest)[0];
+    Object.assign(p, {
+      previousPayments: n(h.data.previousPayments), nextInvoiceNo: num,
+      lastInvoiceNo: earlier ? earlier.data.invoiceNo : '',
+      lastPercent: earlier ? n(earlier.data.percentComplete) : 0
+    });
+    await Store.set(K_PROJ, projects);
+    if (!wasOpen) syncDraftWithProject(before, p);
+  }
+  if (wasOpen){ editingId = null; dirty = true; }
+  await Store.set(K_HIST, history);
+  refreshEditorBits(); renderHub();
+  toast('Invoice #'+h.data.invoiceNo+' deleted');
+}
+
+$('paneProjects').addEventListener('click', async e => {
+  const b = e.target.closest('[data-act]'); if (!b) return;
+  const act = b.dataset.act, id = b.dataset.id;
+  const h = history.find(x=>x.id===id), p = projects.find(x=>x.id===id);
+  switch (act){
+    case 'tab':      hub.view = id; renderHub(); break;
+    case 'proj':     hub.view = 'detail'; hub.id = id; renderHub(); window.scrollTo(0,0); break;
+    case 'back':     hub.view = (hub.view==='edit' && projects.some(x=>x.id===hub.id)) ? 'detail' : 'list';
+                     renderHub(); window.scrollTo(0,0); break;
+    case 'newproj':  hub.view = 'edit'; hub.id = null; renderHub(); window.scrollTo(0,0); break;
+    case 'editproj': hub.view = 'edit'; hub.id = id; renderHub(); window.scrollTo(0,0); break;
+    case 'saveproj': saveProjectForm(); break;
+    case 'nextinv':  if (p) startNextInvoice(p); break;
+    case 'archive':
+      if (!p) break;
+      p.archived = !p.archived; await Store.set(K_PROJ, projects);
+      fillPicker(); renderHub();
+      toast(p.archived ? 'Moved to finished projects' : 'Moved back to active projects'); break;
+    case 'delproj': {
+      if (!p) break;
+      const k = invsOf(p.id).length;
+      if (!confirm('Delete project "'+(p.name||'Untitled')+'"?' +
+        (k ? '\n\nIts '+k+' saved invoice'+(k===1?'':'s')+' will stay under All invoices.' : '') +
+        (!p.archived ? '\n\nIf the job is just done, "Mark project finished" keeps everything tidy instead.' : ''))) break;
+      projects = projects.filter(x=>x.id!==p.id);
+      await Store.set(K_PROJ, projects);
+      if (cur.projectId === p.id && !editingId){ cur.projectId = null; }
+      hub.view = 'list'; refreshEditorBits(); renderHub(); toast('Project deleted'); break;
+    }
+    case 'view':     if (h) openInvoice(h, 'preview'); break;
+    case 'edit':     if (h) openInvoice(h, 'invoice'); break;
+    case 'copy':     if (h) duplicateInvoice(h); break;
+    case 'delinv':   if (h) deleteInvoice(h); break;
+    case 'sent':
+      if (!h) break;
+      h.sentAt = h.sentAt ? null : new Date().toISOString();
+      await Store.set(K_HIST, history); renderHub(); break;
+    case 'more': {
+      const m = b.closest('.irow').querySelector('.ir-more');
+      m.hidden = !m.hidden; b.setAttribute('aria-expanded', String(!m.hidden)); break;
+    }
+  }
+});
+
+/* ---- backup (lives in Settings) ---- */
+function backupNow(){
+  const f = new File([JSON.stringify({company,logo,projects,history},null,2)],
+    'invoice-backup-'+todayISO()+'.json', {type:'application/json'});
+  if (canShareFiles(f)) navigator.share({files:[f]}).catch(()=>downloadFile(f));
+  else downloadFile(f);
+}
+function restoreFrom(f){
+  const r = new FileReader();
+  r.onload = async ()=>{
+    try{
+      const d = JSON.parse(r.result);
+      if (d.company) company = Object.assign(company, d.company);
+      if (d.logo !== undefined) logo = d.logo;
+      if (d.projects) projects = d.projects;
+      if (d.history) history = d.history;
+      await Store.set(K_CO,company); await Store.set(K_LOGO,logo);
+      await Store.set(K_PROJ,projects); await Store.set(K_HIST,history);
+      renderSettings(); refreshEditorBits(); toast('Backup restored');
+    }catch(err){ toast('That file could not be read', true); }
+  };
+  r.readAsText(f);
 }
 
 /* ---- logo: shrink, trim blank margins, keep it small enough to store ---- */
@@ -1602,7 +1883,6 @@ function renderSettings(){
       <label class="field"><span>Company email</span><input type="text" id="sEmail" inputmode="email" autocapitalize="off" value="${esc(company.email)}"></label>
     </div>
     <label class="field"><span>Your name (signs off emails)</span><input type="text" id="sFrom" value="${esc(company.fromName)}"></label>
-    <label class="field"><span>Default notes and payment terms</span><textarea id="sNotes">${esc(company.defaultNotes)}</textarea></label>
     <label class="check"><input type="checkbox" id="sCents" ${company.showCents?'checked':''}>
       <span>Show cents (off rounds to whole dollars)</span></label>
   </div></div>
@@ -1612,8 +1892,16 @@ function renderSettings(){
     <p class="hint" style="margin:0">Send hands the finished spreadsheet to your device's share sheet, so you can
     email or text it, AirDrop it, drop it in Files, or use any other app — the invoice goes along as a real
     attachment. If a browser has no share sheet, the invoice downloads instead and you attach it yourself;
-    <b>Email draft</b> under Notes and terms opens a pre-written message for that case. <b>Print / PDF</b>
+    <b>Email draft</b> under Save and send opens a pre-written message for that case. <b>Print / PDF</b>
     prints the invoice or saves it as a PDF.</p>
+  </div></div>
+  <div class="card"><h2>Backup</h2><div class="body">
+    <p class="hint" style="margin:0 0 10px">Your projects and invoices live on this device. Save a backup now and then, or to move everything to another iPad or computer.</p>
+    <div class="btnrow">
+      <button class="btn" type="button" id="btnBackup">Save backup file</button>
+      <button class="btn" type="button" id="btnRestore">Restore from backup</button>
+    </div>
+    <input type="file" id="restoreFile" accept="application/json,.json" style="display:none">
   </div></div>
   <div class="card"><h2>Put this on your home screen</h2><div class="body">
     <p class="hint" style="margin:0">On iPad or iPhone, open this page in Safari, tap the Share button, and choose <b>Add to Home Screen</b>. It then opens full screen like a regular app.</p>
@@ -1625,12 +1913,16 @@ function renderSettings(){
     : '<b>This browser has no share sheet.</b> Send will save the invoice to your files so you can attach it yourself. Open the app in Safari on your iPad for one-tap sending.';
 
   const fields = { sName:'name', sStreet:'street', sCity:'cityline', sPhone:'phone',
-                   sEmail:'email', sFrom:'fromName', sNotes:'defaultNotes' };
+                   sEmail:'email', sFrom:'fromName' };
   Object.keys(fields).forEach(id => $(id).addEventListener('input', e => {
     company[fields[id]] = e.target.value; settingsChanged();
   }));
   $('sCents').addEventListener('change', e => { company.showCents = e.target.checked; settingsChanged(); });
   $('sHide').addEventListener('change', e => { company.hideName = e.target.checked; settingsChanged(); });
+
+  $('btnBackup').addEventListener('click', backupNow);
+  $('btnRestore').addEventListener('click', ()=> $('restoreFile').click());
+  $('restoreFile').addEventListener('change', e => { const f = e.target.files[0]; e.target.value = ''; if (f) restoreFrom(f); });
 
   $('btnLogo').addEventListener('click', ()=> $('logoFile').click());
   $('logoFile').addEventListener('change', async e => {
@@ -1678,7 +1970,7 @@ function renderSettings(){
   if (typeof ExcelJS === 'undefined')
     w += '<div class="warn">The Excel engine did not load, so <b>Send</b> and <b>Save file</b> need an internet connection. Print still works.</div>';
   if (Store.mode === 'memory')
-    w += '<div class="warn">This browser is blocking storage, so projects will not be remembered after you close the tab. Use <b>Save backup file</b> under Projects.</div>';
+    w += '<div class="warn">This browser is blocking storage, so projects will not be remembered after you close the tab. Use <b>Save backup file</b> under Settings.</div>';
   if (!canShareFiles(new File([''],'t.xlsx',{type:XLSX_MIME})))
     w += '<div class="warn">This browser has no share sheet, so <b>Send</b> will save the invoice to your files instead. Open this page in Safari on your iPad to send it straight to Mail, Messages or anywhere else.</div>';
   $('warnings').innerHTML = w;
